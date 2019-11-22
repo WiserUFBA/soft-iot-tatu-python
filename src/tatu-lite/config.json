@@ -1,8 +1,8 @@
 {
-    "mqtt.url": "192.168.1.101",
-    "mqtt.port": 1883,
-    "mqtt.username": "karaf",
-    "mqtt.password": "karaf", 
+    "mqtt.url": "m11.cloudmqtt.com",
+    "mqtt.port": 10913,
+    "mqtt.username": "tcvdrpqa",
+    "mqtt.password": "qACrEoF-wVbb", 
     "name": "ufbaino01",   
     "sensors": [
         {
