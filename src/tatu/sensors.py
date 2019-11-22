@@ -8,6 +8,7 @@ import random
 
 
 # The name of sensors functions should be exactly the same as in config.json
+
 def humiditySensor():
     return random.randint(10, 70);
 
