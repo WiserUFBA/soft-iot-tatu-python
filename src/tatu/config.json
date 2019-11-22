@@ -1,0 +1,17 @@
+{
+    "mqtt.url": "localhost",
+    "mqtt.port": 1883,
+    "mqtt.username": "karaf",
+    "mqtt.password": "karaf", 
+    "name": "ufbaino01",   
+    "sensors": [
+        {
+            "name": "humiditySensor",
+            "type": "integer" 
+        }, 
+        {
+            "name": "temperatureSensor",
+            "type": "integer" 
+        }
+    ]
+}
