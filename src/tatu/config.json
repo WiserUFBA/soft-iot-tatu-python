@@ -1,17 +1,17 @@
 {
-    "mqtt.url": "192.168.1.101",
-    "mqtt.port": 1883,
-    "mqtt.username": "karaf",
-    "mqtt.password": "karaf", 
-    "name": "ufbaino01",   
+    "mqttBroker": "192.168.128.27",
+    "mqttPort": 1883,
+    "mqttUsername": "karaf",
+    "mqttPassword": "karaf", 
+    "deviceName": "galileo01",   
     "sensors": [
         {
-            "name": "humiditySensor",
-            "type": "integer" 
+            "type": "integer", 
+            "name": "luminositySensor"
         }, 
         {
-            "name": "temperatureSensor",
-            "type": "integer" 
+            "type": "integer", 
+            "name": "gasSensor"
         }
     ]
 }

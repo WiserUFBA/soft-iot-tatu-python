@@ -1,0 +1,24 @@
+- Formalizar cada método
+	- GET, FLOW, EVENT, PUT, SET, POST, DELETE, STOP
+	- Ver formalização de HTTP
+		- https://restfulapi.net/http-methods/
+		- https://pt.wikipedia.org/wiki/Hypertext_Transfer_Protocol#M%C3%A9todos_de_solicita%C3%A7%C3%A3o
+		- https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Methods
+
+- Criar método POST na versão com métodos hard coded
+
+- config.json pode guardar estado para, caso o sensor caia, volte e já comece a enviar com o método que estava usando antes de cair
+
+- Deixar tópicos raiz (dev e dev/nomeDevice) para configuração: com método SET ou PUT?
+	- Altera o config.json 
+
+- Sensor pode se conectar a um broker padrão, local (zeroconf) ou na nuvem (fixo), e, via método SET, receber configuração
+
+- Possibilitar codificar/decodificar as mensagens usando BSON: http://bsonspec.org/
+
+- Validar requisições com schema json: https://pypi.org/project/jsonschema/
+
+- Criar schema.py para TATU ficar independente da mensagem
+	- Implementa os métodos TATU, permitindo que a implementação TATU possa ser modular
+	- Cada método TATU tem um schema json associado, permitindo a independência da mensagem
+		- Precisa definir requsitos mínimos para cada método TATU

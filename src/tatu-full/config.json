@@ -1,0 +1,25 @@
+{
+    "deviceName": "galileo01", 
+    "sensors": [
+        {
+            "type": "integer", 
+            "name": "humiditySensor"
+        }, 
+        {
+            "type": "integer", 
+            "name": "temperatureSensor"
+        }, 
+        {
+            "type": "boolean", 
+            "name": "ledActuator"
+        }
+    ], 
+    "mqttBroker": "192.168.128.40", 
+    "topicErr": "/ERR", 
+    "mqttPort": 1883, 
+    "mqttPassword": "", 
+    "topicPrefix": "dev/", 
+    "topicRes": "/RES", 
+    "mqttUsername": "", 
+    "topicReq": "/REQ"
+}

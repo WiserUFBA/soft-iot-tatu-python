@@ -1,0 +1,25 @@
+{
+    "mqttBroker": "localhost", 
+    "topicErr": "/ERR", 
+    "mqttPort": 1883, 
+    "deviceName": "ufbaino01", 
+    "mqttPassword": "", 
+    "topicPrefix": "dev/", 
+    "topicRes": "/RES", 
+    "mqttUsername": "", 
+    "topicReq": "/REQ",  
+    "sensors": [
+        {
+            "name": "luminositySensor",
+            "type": "integer" 
+        },
+        {
+            "name": "gasSensor",
+            "type": "integer" 
+        },
+        {
+            "name": "ledActuator",
+            "type": "boolean" 
+        }
+    ]
+}

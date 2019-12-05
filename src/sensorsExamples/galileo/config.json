@@ -1,8 +1,8 @@
 {
     "mqtt.url": "localhost",
     "mqtt.port": 1883,
-    "mqtt.username": "karaf",
-    "mqtt.password": "karaf", 
+    "mqtt.username": "",
+    "mqtt.password": "", 
     "name": "galileo01",   
     "sensors": [
         {

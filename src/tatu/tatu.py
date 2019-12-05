@@ -27,8 +27,8 @@ class minhaThread (threading.Thread):
 
         if (self.met == "FLOW"):
         	buildFlowAnwserDevice(self.deviceName, self.sensorName, self.topic, self.pub_client, self.collectTime, self.publishTime)
-        elif (self.met == "EVT"):
-        	buildEvtAnwserDevice(self.deviceName, self.sensorName, self.topic, self.pub_client, self.collectTime, self.publishTime)
+        elif (self.met == "EVENT"):
+        	buildEventAnwserDevice(self.deviceName, self.sensorName, self.topic, self.pub_client, self.collectTime, self.publishTime)
         elif (self.met == "GET"):
         	buildGetAnwserDevice(self.deviceName, self.sensorName, self.topic, self.pub_client)
         
@@ -55,26 +55,26 @@ def buildFlowAnwserDevice(deviceName, sensorName, topic, pub_client, collectTime
         print("There is no " + sensorName + " sensor in device " + deviceName)
 
 
-def buildEvtAnwserDevice(deviceName, sensorName, topic, pub_client, collectTime, publishTime):
-#EVT VALUE sensorName {"collect":10000}
-#{"CODE":"POST","METHOD":"EVT","HEADER":{"NAME":"deviceName"},"BODY":{"sensorName":"value"}}
+def buildEventAnwserDevice(deviceName, sensorName, topic, pub_client, collectTime, publishTime):
+#EVENT VALUE sensorName {"collect":10000}
+#{"CODE":"POST","METHOD":"EVENT","HEADER":{"NAME":"deviceName"},"BODY":{"sensorName":"value"}}
     try:
-        methodEvt = getattr(sensors, sensorName)
-        value = methodEvt()
-        responseModel = {"CODE":"POST","METHOD":"EVT","HEADER":{"NAME":deviceName},"BODY":{sensorName:value,"EVT":{"collect":(collectTime*1000),"publish":(publishTime*1000)}}}
-        #responseModel = {'CODE':'POST','METHOD':'EVT','HEADER':{'NAME':deviceName},'BODY':{sensorName:value}}
+        methodEvent = getattr(sensors, sensorName)
+        value = methodEvent()
+        responseModel = {"CODE":"POST","METHOD":"EVENT","HEADER":{"NAME":deviceName},"BODY":{sensorName:value,"EVENT":{"collect":(collectTime*1000),"publish":(publishTime*1000)}}}
+        #responseModel = {'CODE':'POST','METHOD':'EVENT','HEADER':{'NAME':deviceName},'BODY':{sensorName:value}}
         response = json.dumps(responseModel)
         pub_client.publish(topic, response)
 
         while True:
             sleep(collectTime)
             publishTime = publishTime + collectTime
-            aux = methodEvt()
+            aux = methodEvent()
             if aux!=value:
                 value = aux
                 #Request:  #GET VALUE sensorName
-                responseModel = {"CODE":"POST","METHOD":"EVT","HEADER":{"NAME":deviceName},"BODY":{sensorName:value,"EVT":{"collect":(collectTime*1000),"publish":(publishTime*1000)}}}
-                #responseModel = {'CODE':'POST','METHOD':'EVT','HEADER':{'NAME':deviceName},'BODY':{sensorName:value}}
+                responseModel = {"CODE":"POST","METHOD":"EVENT","HEADER":{"NAME":deviceName},"BODY":{sensorName:value,"EVENT":{"collect":(collectTime*1000),"publish":(publishTime*1000)}}}
+                #responseModel = {'CODE':'POST','METHOD':'EVENT','HEADER':{'NAME':deviceName},'BODY':{sensorName:value}}
                 response = json.dumps(responseModel)
                 pub_client.publish(topic, response)
     except:
@@ -95,11 +95,11 @@ def buildGetAnwserDevice(deviceName, sensorName, topic, pub_client):
         print("There is no " + sensorName + " sensor in device " + deviceName)
 
 def main(data, msg):
-    mqtt_url = data["mqtt.url"]
-    mqtt_port = data["mqtt.port"]
-    mqtt_username = data["mqtt.username"]
-    mqtt_password = data["mqtt.password"]
-    deviceName = data["name"]
+    mqttBroker = data["mqttBroker"]
+    mqttPort = data["mqttPort"]
+    mqttUsername = data["mqttUsername"]
+    mqttPassword = data["mqttPassword"]
+    deviceName = data["deviceName"]
 
     msgList = (str(msg.payload)).split(" ")
     met = msgList[0]
@@ -107,9 +107,9 @@ def main(data, msg):
     sensorName = msgList[2]
 
     pub_client = pub.Client(deviceName + "_" + sensorName + "_" + met)
-    pub_client.username_pw_set(mqtt_username, mqtt_password)
+    pub_client.username_pw_set(mqttUsername, mqttPassword)
     pub_client.user_data_set(data)
-    pub_client.connect(mqtt_url, mqtt_port, 60)
+    pub_client.connect(mqttBroker, mqttPort, 60)
 
     
     print ("-------------------------------------------------")
@@ -130,7 +130,7 @@ def main(data, msg):
         config = json.loads(msgConf)
         collectTime = config["collect"]
         publishTime = config["publish"]
-    elif (met=="EVT"):
+    elif (met=="EVENT"):
     	msgConf = (str(msgList[3]))
     	config = json.loads(msgConf)
     	collectTime = config["collect"]

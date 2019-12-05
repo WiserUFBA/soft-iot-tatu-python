@@ -1,8 +1,8 @@
 {
-    "mqtt.url": "m11.cloudmqtt.com",
-    "mqtt.port": 10913,
-    "mqtt.username": "tcvdrpqa",
-    "mqtt.password": "qACrEoF-wVbb", 
+    "mqtt.url": "localhost",
+    "mqtt.port": 1883,
+    "mqtt.username": "",
+    "mqtt.password": "", 
     "name": "ufbaino01",   
     "sensors": [
         {

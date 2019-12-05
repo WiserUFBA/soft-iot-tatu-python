@@ -6,15 +6,13 @@ from time import sleep
 
 #You don't need to change this file. Just change sensors.py and config.json
 
-topicPrefix = "dev/"
-
 def on_connect(mqttc, obj, flags, rc):
-    topic = topicPrefix + obj["deviceName"] + "/#"
+    topic = obj["topicPrefix"] + obj["deviceName"] + obj["topicReq"] + "/#"
     print("Topic device subscribed: " + topic)
     mqttc.subscribe(topic)
 
 def on_message(mqttc, obj, msg):
-    if "RES" not in msg.topic:
+    if obj["topicReq"] in msg.topic:
     	tatu.main(obj, msg)
 
 def on_disconnect(mqttc, obj, rc):
@@ -44,6 +42,5 @@ while True:
 		sub_client.loop_forever()
 	except:
 		print ("Broker unreachable on " + mqttBroker + " URL!")
-		f.close()
 		sleep(5)
 
