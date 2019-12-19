@@ -14,7 +14,7 @@
             "name": "ledActuator"
         }
     ], 
-    "mqttBroker": "192.168.128.40", 
+    "mqttBroker": "192.168.128.29", 
     "topicErr": "/ERR", 
     "mqttPort": 1883, 
     "mqttPassword": "", 

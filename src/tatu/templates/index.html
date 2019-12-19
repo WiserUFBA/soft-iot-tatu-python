@@ -1,58 +1,62 @@
-<style>
-	
-	form { display: table; }
-	p { display: table-row; }
-	label { display: table-cell; }
-	input { display: table-cell; }
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>TATU Protocol Configuration</title>
+    <script>
+        var data = JSON.parse('{{data | tojson | safe}}');
 
-</style>
+        document.getElementById("mqttBroker").value = data.mqttBroker;
+        document.getElementById("mqttPort").value = data.mqttPort;
+        document.getElementById("mqttUsername").value = data.mqttUsername;
+        document.getElementById("mqttPassword").value = data.mqttPassword;
+        document.getElementById("deviceName").value = data.deviceName;
+    </script>
+    <style>
+        form { display: table; }
+        p { display: table-row; }
+        label { display: table-cell; }
+        input { display: table-cell; }
+    </style>
+  </head>
+  <body>
+    <h1>TATU Protocol Configuration</h1>
 
-<h1>TATU Protocol Configuration</h1>
+    <form action="" method="POST">
 
-<form action="" method="POST">
-
-    <ul style="list-style-type: none;">
-    	<h2>MQTT Broker Configuration:</h2>
-        <p>
-            <label for="mqttBroker">MQTT Broker: </label>
-            <input id="mqttBroker" type="text" name="mqttBroker"> 
-        </p>
+        <ul style="list-style-type: none;">
+            <h2>MQTT Broker Configuration:</h2>
+            <p>
+                <label for="mqttBroker">MQTT Broker: </label>
+                <input id="mqttBroker" type="text" name="mqttBroker"> 
+            </p>
         
-        <p>
-            <label for="mqttPort">MQTT Port: </label>
-            <input id="mqttPort" type="text" name="mqttPort">
-        </p>
+            <p>
+                <label for="mqttPort">MQTT Port: </label>
+                <input id="mqttPort" type="text" name="mqttPort">
+            </p>
     
-        <p>
-            <label for="mqttUsername">MQTT Username: </label>
-            <input id="mqttUsername" type="text" name="mqttUsername">
-        </p>
+            <p>
+                <label for="mqttUsername">MQTT Username: </label>
+                <input id="mqttUsername" type="text" name="mqttUsername">
+            </p>
     
-        <p>
-            <label for="mqttPassword">MQTT Password: </label>
-            <input id="mqttPassword" type="password" name="mqttPassword">
-        </p>
-    	
-    	<h2>Device Configuration:</h2>
-        <p>
-            <label for="deviceName">Device Name: </label>
-            <input id="deviceName" type="text" name="deviceName">
-        </p>
-        <p>
-            <input type="submit" value="Enviar">
-        </p>
+            <p>
+                <label for="mqttPassword">MQTT Password: </label>
+                <input id="mqttPassword" type="password" name="mqttPassword">
+            </p>
+        
+            <h2>Device Configuration:</h2>
+            <p>
+                <label for="deviceName">Device Name: </label>
+                <input id="deviceName" type="text" name="deviceName">
+            </p>
+            <p>
+                <input type="submit" value="Enviar">
+            </p>
 
-    </ul>
+        </ul>
 
-</form>
-
-<script>
-	var data = JSON.parse('{{data | tojson | safe}}');
-
-	document.getElementById("mqttBroker").value = data.mqttBroker;
-	document.getElementById("mqttPort").value = data.mqttPort;
-	document.getElementById("mqttUsername").value = data.mqttUsername;
-	document.getElementById("mqttPassword").value = data.mqttPassword;
-	document.getElementById("deviceName").value = data.deviceName;
-	
-</script>
+    </form>
+  </body>
+</html>

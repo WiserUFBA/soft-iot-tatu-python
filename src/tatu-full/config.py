@@ -1,3 +1,7 @@
+#export FLASK_ENV=development
+#export FLASK_APP=config.py
+#flask run --host=0.0.0.0
+
 from flask import Flask, request, jsonify, send_from_directory, render_template
 import json
 import os
@@ -10,6 +14,7 @@ def config():
 		with open('config.json') as f:
   			data = json.load(f)
 		return render_template("index.html", data=data)
+		#return send_from_directory('', 'configPage.html')
 	else:
 		with open('config.json') as f:
 			data = json.load(f)
@@ -22,6 +27,10 @@ def config():
 		data["mqttPassword"] = form_data["mqttPassword"]
 
 		data["deviceName"] = form_data["deviceName"]
+		data["topicPrefix"] = form_data["topicPrefix"]
+		data["topicReq"] = form_data["topicReq"]
+		data["topicRes"] = form_data["topicRes"]
+		data["topicErr"] = form_data["topicErr"]
 
 		with open('config.json', 'w') as output:
 			json.dump(data, output, indent=4)

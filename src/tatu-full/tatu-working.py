@@ -34,26 +34,6 @@ class sensorProcess (multiprocessing.Process):
             buildFlowAnwserDevice(self.deviceName, self.sensorName, self.topic, self.topicError, self.pub_client, self.collectTime, self.publishTime)
         
         print ("Stopping process " + self.processID)
-
-class actuatorProcess (multiprocessing.Process):
-    def __init__(self, idP, deviceName, sensorName, met, topic, topicError, pub_client, value):
-        multiprocessing.Process.__init__(self)
-        self.processID = idP
-        self.deviceName = deviceName
-        self.sensorName = sensorName
-        self.met = met
-        self.topic = topic
-        self.topicError = topicError
-        self.pub_client = pub_client
-        self.value = value
-
-    def run(self):
-        print ("Starting process " + self.processID)
-
-        if (self.met == "POST"):
-            buildPostAnwserDevice(self.deviceName, self.sensorName, self.topic, self.topicError, self.pub_client, self.value)
-        
-        print ("Stopping process " + self.processID)
  
 def buildFlowAnwserDevice(deviceName, sensorName, topic, topicError, pub_client, collectTime, publishTime):
     value = ""
@@ -193,9 +173,7 @@ def main(data, msg):
     elif (met=="POST"):
         #{"method":"POST", "sensor":"sensorName", "value":value}
         value = msgJson["value"]
-        proc = actuatorProcess(idP, deviceName, sensorName, met, topic, topicError, pub_client, value)
-        procs.append(proc)
-        proc.start()
+        buildPostAnwserDevice(deviceName, sensorName, topic, topicError, pub_client, value)
     else:
         if (met=="GET"):
             collectTime = 0
