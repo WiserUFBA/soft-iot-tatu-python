@@ -1,15 +1,19 @@
 import mraa
 
-sensorValueLum = 0
-sensorValueGas = 0
-onboard_led = mraa.Gpio(13)
+sensorValueTemp = 0
+sensorValueHumi = 0
+sensorValueSound = 0
 
 # The name of sensors functions should be the same as in config.json
-def luminositySensor():
+def humiditySensor():
 	sensorValueLum = mraa.Aio(0) #A0 pin from galileo Gen 2
 	return sensorValueLum.read()
 
-def gasSensor():
+def temperatureSensor():
+	sensorValueGas = mraa.Aio(1) #A1 pin from galileo Gen 2
+	return sensorValueGas.read()
+
+def temperatureSensor():
 	sensorValueGas = mraa.Aio(1) #A1 pin from galileo Gen 2
 	return sensorValueGas.read()
 
@@ -27,11 +31,4 @@ def ledActuator(s = None):
 		else:
 			onboard_led.write(0)
 		return s
-
-#def ledActuator():
-	#onboard_led.dir(mraa.DIR_IN)
-#	if onboard_led.read():
-#		return True
-#	else:
-#		return False
 
