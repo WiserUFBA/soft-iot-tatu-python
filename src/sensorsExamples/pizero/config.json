@@ -1,0 +1,21 @@
+{
+    "mqttBroker": "192.168.0.139", 
+    "topicErr": "/ERR", 
+    "mqttPort": 1883, 
+    "deviceName": "pizero01", 
+    "mqttPassword": "", 
+    "topicPrefix": "dev/", 
+    "topicRes": "/RES", 
+    "mqttUsername": "", 
+    "topicReq": "/REQ",  
+    "sensors": [
+        {
+            "name": "humiditySensor",
+            "type": "integer" 
+        },
+        {
+            "name": "temperatureSensor",
+            "type": "integer" 
+        }
+    ]
+}

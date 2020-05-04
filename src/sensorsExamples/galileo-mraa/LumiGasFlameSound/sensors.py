@@ -1,6 +1,5 @@
 import mraa
 
-
 # The name of sensors functions should be the same as in config.json
 
 
@@ -16,14 +15,6 @@ def gasSensor():
 
 def flameSensor():
     sensor = None
-    sensor = mraa.Gpio(2)
+    sensor = mraa.Gpio(4)
     sensor.dir(mraa.DIR_IN)
     return sensor.read()
-
-def soundSensor():
-    sensor = None
-    sensor = mraa.Aio(2)
-    return sensor.read()
-
-
-

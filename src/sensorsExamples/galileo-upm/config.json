@@ -22,7 +22,7 @@
             "type": "boolean" 
         },
         {
-            "name": "soundSensor",
+            "name": "distanceSensor",
             "type": "integer" 
         }
     ]

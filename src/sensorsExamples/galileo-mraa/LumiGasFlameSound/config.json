@@ -1,12 +1,12 @@
 {
-    "mqttBroker": "gateway01.local", 
+    "mqttBroker": "192.168.1.104", 
     "topicErr": "/ERR", 
     "mqttPort": 1883, 
-    "deviceName": "galileo02", 
-    "mqttPassword": "karaf", 
+    "deviceName": "galileo01", 
+    "mqttPassword": "", 
     "topicPrefix": "dev/", 
     "topicRes": "/RES", 
-    "mqttUsername": "karaf", 
+    "mqttUsername": "", 
     "topicReq": "/REQ",  
     "sensors": [
         {
@@ -20,10 +20,6 @@
         {
             "name": "flameSensor",
             "type": "boolean" 
-        },
-        {
-            "name": "soundSensor",
-            "type": "integer" 
         }
     ]
 }

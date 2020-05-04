@@ -8,8 +8,11 @@ from time import sleep
 
 def on_connect(mqttc, obj, flags, rc):
     topic = obj["topicPrefix"] + obj["deviceName"] + obj["topicReq"] + "/#"
-    print("Topic device subscribed: " + topic)
     mqttc.subscribe(topic)
+    print("Device's sensors:")
+    for sensor in obj['sensors']:
+    	print ("\t" + sensor['name'])
+    print("Topic device subscribed: " + topic)
 
 def on_message(mqttc, obj, msg):
     if obj["topicReq"] in msg.topic:
