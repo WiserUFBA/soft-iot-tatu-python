@@ -22,3 +22,14 @@
 	- Implementa os métodos TATU, permitindo que a implementação TATU possa ser modular
 	- Cada método TATU tem um schema json associado, permitindo a independência da mensagem
 		- Precisa definir requsitos mínimos para cada método TATU
+
+
+
+https://iotdk.intel.com/docs/master/upm/index.html
+https://iotdk.intel.com/docs/master/upm/python/
+https://projects.eclipse.org/projects/iot.upm
+https://github.com/eclipse/upm
+
+https://iotdk.intel.com/docs/master/mraa/index.html
+https://projects.eclipse.org/projects/iot.mraa
+https://github.com/eclipse/mraa
