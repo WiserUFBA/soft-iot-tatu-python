@@ -1,6 +1,6 @@
 import paho.mqtt.client as mqtt
 import json
-import tatus
+import tatu
 
 from time import sleep
 
