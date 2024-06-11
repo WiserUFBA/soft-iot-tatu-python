@@ -3,7 +3,7 @@ import sensors
 import json
 import multiprocessing
 
-#You don't need to change this file. Just change sensors.py and config.json
+#You don't have to change this file. Just change sensors.py and config.json
 
 from time import sleep
 
@@ -23,13 +23,14 @@ class sensorProcess (multiprocessing.Process):
         self.pub_client = pub_client
         self.publishTime = publishTime
         self.collectTime = collectTime
+        print ("ok - process GET")
     def run(self):
         print ("Starting process " + self.processID)
 
         if (self.met == "EVENT"):
             buildEventAnwserDevice(self.deviceName, self.sensorName, self.topic, self.topicError, self.pub_client, self.collectTime, self.publishTime)
         elif (self.met == "GET"):
-        	buildGetAnwserDevice(self.deviceName, self.sensorName, self.topic, self.topicError, self.pub_client)
+            buildGetAnwserDevice(self.deviceName, self.sensorName, self.topic, self.topicError, self.pub_client)
         elif (self.met == "FLOW"):
             buildFlowAnwserDevice(self.deviceName, self.sensorName, self.topic, self.topicError, self.pub_client, self.collectTime, self.publishTime)
         
@@ -109,11 +110,16 @@ def buildEventAnwserDevice(deviceName, sensorName, topic, topicError, pub_client
 
 def buildGetAnwserDevice(deviceName, sensorName, topic, topicError, pub_client):
     try:
+        print ("ok - enter GET")
         methodGet = getattr(sensors, sensorName)
         value = methodGet()
-
+        print ("ok - value GET")
         #Request: {"method":"GET", "sensor":"sensorName"}
+        #Response: {"header":{"method":"GET", "device":"deviceName", "name":"sensorName"}, "payload":{"sensors":{"sensorName":listValues}}}
+        #{"header":{"method":"GET", "device":deviceName, "name":sensorName}, "payload":{"sensors":{sensorName:value}}}
+        #responseModel = {"header":{"method":"GET", "device":deviceName, "name":sensorName}, "payload":{"sensors":{sensorName:value}}}
         responseModel = {'CODE':'POST','METHOD':'GET','HEADER':{'NAME':deviceName},'BODY':{sensorName:value}}
+        print(responseModel)
         response = json.dumps(responseModel)
 
         pub_client.publish(topic, response)
@@ -167,10 +173,13 @@ def main(data, msg):
     print("-------------------------------------------------")
     idP = met + "_" + deviceName + "_" + sensorName
     pub_client = pub.Client(idP)
+    #pub_client = pub.Client(pub.CallbackAPIVersion.VERSION1, idP)
     pub_client.username_pw_set(mqttUsername, mqttPassword)
     pub_client.user_data_set(data)
     pub_client.on_disconnect = on_disconnect
     pub_client.connect(mqttBroker, mqttPort, 60)
+    
+    print("ok - cliente")
     
     if (met=="STOP"):
         #{"method":"STOP", "target": "EVENT", "sensor":"soundSensor"}
@@ -200,6 +209,7 @@ def main(data, msg):
         if (met=="GET"):
             collectTime = 0
             publishTime = 0
+            print("ok - GET")
         elif (met=="FLOW"):
             time = msgJson["time"]
             collectTime = time["collect"]

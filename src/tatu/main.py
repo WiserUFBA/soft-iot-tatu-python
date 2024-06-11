@@ -1,6 +1,6 @@
 import paho.mqtt.client as mqtt
 import json
-import tatu
+import tatus
 
 from time import sleep
 
@@ -22,6 +22,7 @@ def on_disconnect(mqttc, obj, rc):
 	print("disconnected!")
 	exit()
 
+
 while True:
 	with open('config.json') as f:
 		data = json.load(f)
@@ -32,7 +33,9 @@ while True:
 	mqttPassword = data["mqttPassword"]
 	deviceName = data["deviceName"]
 
-	sub_client = mqtt.Client(deviceName + "_sub")
+	sub_client = mqtt.Client(deviceName + "66f6ff")
+
+	#sub_client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, deviceName + "_sub")
 
 	sub_client.username_pw_set(mqttUsername, mqttPassword)
 	sub_client.user_data_set(data)
