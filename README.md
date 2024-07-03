@@ -1,5 +1,7 @@
 # soft-iot-tatu-python
- TATU protocol in Python
+
+TATU protocol in Python
+
 Request GET for a specific sensor: 
 {"method":"GET", "sensor":"sensorName"}
 
