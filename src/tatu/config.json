@@ -1,20 +1,16 @@
 {
-    "deviceName": "galileo01", 
+    "deviceName": "pizerosensor01", 
     "sensors": [
         {
-            "type": "integer", 
+            "type": "int", 
             "name": "humiditySensor"
         }, 
         {
-            "type": "integer", 
+            "type": "int", 
             "name": "temperatureSensor"
-        }, 
-        {
-            "type": "boolean", 
-            "name": "ledActuator"
         }
     ], 
-    "mqttBroker": "192.168.1.100", 
+    "mqttBroker": "10.8.0.30", 
     "topicErr": "/ERR", 
     "mqttPort": 1883, 
     "mqttPassword": "", 
