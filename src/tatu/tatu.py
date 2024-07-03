@@ -58,7 +58,7 @@ class virtualSensor():
                 arrayValues = []
 
                 if (t >= self.publishTime):
-                    header = {"method":"FLOW", "device":self.deviceName, "name":self.sensorName, "time":{"collect":self.collectTime,"publish":self.publishTime}}
+                    header = {"method":"FLOW", "device":self.deviceName, "sensor":self.sensorName, "time":{"collect":self.collectTime,"publish":self.publishTime}}
                     
                     for y in self.sensorsList:
                         sensorValues = {y["name"]:locals()[y["name"]]}
@@ -93,7 +93,7 @@ class virtualSensor():
         try:
             arrayValues = []
             retrieved = []
-            header = {"method":"EVENT", "device":self.deviceName, "name":self.sensorName, "time":{"collect":self.collectTime,"publish":self.publishTime}}
+            header = {"method":"EVENT", "device":self.deviceName, "sensor":self.sensorName, "time":{"collect":self.collectTime,"publish":self.publishTime}}
             methodEvent = getattr(sensors, self.sensorName)
             value = methodEvent()
             retrieved.append(str(value))
@@ -111,7 +111,7 @@ class virtualSensor():
                 if aux!=value:
                     arrayValues = []
                     retrieved = []
-                    header = {"method":"EVENT", "device":self.deviceName, "name":self.sensorName, "time":{"collect":self.collectTime,"publish":self.publishTime}}
+                    header = {"method":"EVENT", "device":self.deviceName, "sensor":self.sensorName, "time":{"collect":self.collectTime,"publish":self.publishTime}}
                     value = aux
                     retrieved.append(str(value))
                     #retrieved.append(value)
@@ -148,7 +148,7 @@ class virtualSensor():
 
             arrayValues = []
 
-            header = {"method":"GET", "device":self.deviceName, "name":self.sensorName}
+            header = {"method":"GET", "device":self.deviceName, "sensor":self.sensorName}
                     
             for y in self.sensorsList:
                 sensorValues = {y["name"]:locals()[y["name"]]}

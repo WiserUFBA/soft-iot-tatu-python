@@ -1,41 +1,58 @@
-##### new version
+
+Request GET for a specific sensor: 
+{"method":"GET", "sensor":"sensorName"}
+
+Request GET for all sensors at a device: 
+{"method":"GET", "sensor":"deviceName"}
+
+Response GET sensorName:
+{"header":{"method":"GET", "device":"deviceName", "sensor":"sensorName"}, "payload":{"sensors":{"sensorName":listValues}}}
+
+Response GET deviceName:
+{"header":{"method":"GET", "device":"deviceName", "sensor":"deviceName"}, "payload":{"sensors":{"sensorName1":listValues,"sensorName2":listValues,"sensorName3":listValues}}}
 
 
-=== POST
-topic: /dev/sc01
-++ {"method":"post", "sensor":"soundSensor" value:"true"}
 
-{"code":"post","method":"post", "sensor":"soundSensor" value:"true"}
+Request FLOW for a specific sensor:
+{"method":"FLOW", "sensor":"sensorName", "time":{"collect":collectTime,"publish":publishTime}}
 
-=== FLOW
+Request FLOW for all sensors at a device:
+{"method":"FLOW", "sensor":"sensorName", "time":{"collect":collectTime,"publish":publishTime}}
 
-*REQUEST*
-topic: /dev/sc01
-++ {"method":"flow", "sensor":"soundSensor", "time":{"collect":5000,"publish":10000}}
+Response FLOW sensorName:
+{"header":{"method":"FLOW", "device":"deviceName", "sensor":"sensorName", "time":{"collect":collectTime,"publish":publishTime}}, "payload":{"sensors":{"sensorName":listValues}}}
 
-mosquitto_pub -t "dev/sc01" -m "{\"method\":\"flow\", \"device\":\"sc01\", \"sensor\":\"soundSensor\", \"time\":{\"collect\":30000,\"publish\":60000}}"
+Response FLOW deviceName:
+{"header":{"method":"FLOW", "device":"deviceName", "sensor":"deviceName","time":{"collect":collectTime,"publish":collectTime}},"payload":{"sensors":{"sensorName1":listValues,"sensorName2":listValues,"sensorName3":listValues}}}
 
-*RESPONSE*
-topic: /dev/sc01
-++ {"code":"post","method":"flow","header":{"device":"sc01", "sensor":"soundSensor", time:{"collect":5000,"publish":10000}},data:["21.906600895435417","24.82613596227655"]}
 
-=== GET
 
-*REQUEST*
-topic: /dev/sc01
-++ {"method":"get", "sensor":"soundSensor"}
+Request EVENT for a specific sensor:
+{"method":"EVENT", "name":"sensorName", "time":{"collect":collectTime,"publish":publishTime}}
 
-mosquitto_pub -t "dev/sc01" -m "{\"method\":\"get\", \"device\":\"sc01\", \"sensor\":\"soundSensor\"}" 
+Request EVENT for all sensors at a device: 
+- There's no EVENT for all sensors
 
-*RESPONSE*
-topic: /dev/sc01
-++ {"code":"post","method":"get","header":{"device":"sc01", "sensor":"soundSensor"},data:["21.906600895435417"]}
+Response EVENT sensor:
+{"header":{"method":"EVENT", "device":"deviceName", "sensor":"sensorName", "time":{"collect":collectTime,"publish":publishTime}}, "payload":{"sensors":{"sensorName":listValues}}}
 
-=== EVT (on development)
 
-*REQUEST*
-topic: /dev/sc01
-++ {"method":"evt", "device":"sc01", "sensor":"soundSensor", condition:{"operation":">=", "operator":10, , "data_type": "float"}}
+Request POST sensor:
+{"method":"POST", "sensor":"sensorName", "value":value}
 
-== ERROR
-{"code":"error", "number":errorNumber, "message":"errorMessage"}
+Response POST sensor (change in progress):
+{"header":{"method":"POST", "device":"deviceName", "sensor":"sensorName", "value":value}, "payload":{"value":value}}
+
+
+
+sensorName examples:
+- humiditySensor
+- temperatureSensor
+- soundSensor
+- humanPresenceSensor
+
+
+deviceName examples:
+- pizerosensor01
+- pisensor01
+- galileo01
