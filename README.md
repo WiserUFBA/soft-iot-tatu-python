@@ -48,14 +48,83 @@ Response POST sensor (change in progress):
 
 
 
-sensorName examples:
-- humiditySensor
-- temperatureSensor
-- soundSensor
-- humanPresenceSensor
-
-
 deviceName examples:
 - pizerosensor01
 - pisensor01
 - galileo01
+
+
+
+# IoT Sensor Taxonomy (camelCase Naming Convention for sensorName)
+
+This document presents a functional taxonomy of common IoT sensors using a consistent `camelCase` naming convention. It can be used in data models, APIs, semantic vocabularies, or general documentation of IoT systems.
+
+## 🌡️ Environmental Sensors
+- `temperatureSensor`
+- `humiditySensor`
+- `pressureSensor`
+- `lightSensor`
+- `uvSensor`
+- `windSpeedSensor`
+- `rainfallSensor`
+- `soilMoistureSensor`
+
+## 🌫️ Gas and Air Quality Sensors
+- `co2Sensor`
+- `coSensor`
+- `methaneSensor`
+- `smokeSensor`
+- `airQualitySensor`
+- `ozoneSensor`
+- `vocSensor` *(Volatile Organic Compounds)*
+
+## 🧭 Motion and Position Sensors
+- `motionSensor`
+- `accelerometerSensor`
+- `gyroscopeSensor`
+- `magnetometerSensor`
+- `tiltSensor`
+- `pirSensor` *(Passive Infrared)*
+- `ultrasonicSensor`
+- `proximitySensor`
+- `vibrationSensor`
+
+## 🔊 Audio and Imaging Sensors
+- `soundSensor`
+- `microphoneSensor`
+- `cameraSensor`
+- `thermalCameraSensor`
+
+## ⚡ Electrical Sensors
+- `voltageSensor`
+- `currentSensor`
+- `powerSensor`
+- `energyConsumptionSensor`
+
+## ❤️ Biometric and Health Sensors
+- `heartRateSensor`
+- `bloodPressureSensor`
+- `bloodOxygenSensor`
+- `emgSensor` *(Electromyography)*
+- `ecgSensor` *(Electrocardiogram)*
+- `temperatureBodySensor`
+
+## 📍 Location and Navigation Sensors
+- `gpsSensor`
+- `geoLocationSensor`
+- `compassSensor`
+- `altitudeSensor`
+
+## 🧪 Other / Specialized Sensors
+- `waterLeakSensor`
+- `soilPhSensor`
+- `flameSensor`
+- `rfidSensor`
+- `nfcSensor`
+- `touchSensor`
+- `weightSensor`
+- `loadCellSensor`
+
+---
+
+> **Note:** This taxonomy does not represent an official standard but is based on common naming practices across IoT platforms and ontologies such as SOSA/SSN, SAREF, and QUDT. You are encouraged to extend it based on your specific domain or application.
