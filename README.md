@@ -2,6 +2,8 @@
 
 TATU protocol in Python
 
+O TATU (Tiny Application for Things Universal) é um protocolo leve de aplicação desenvolvido para comunicação entre dispositivos IoT por meio do MQTT, com foco em simplicidade, interoperabilidade e eficiência. Ele define um conjunto padronizado de mensagens em formato JSON para realizar operações típicas de IoT, como leitura de sensores (GET), envio de comandos ou dados (POST), coleta periódica (FLOW) e detecção de alterações em sensores (EVENT). Enquanto o método FLOW publica leituras em intervalos regulares de tempo, o EVENT é orientado a eventos, transmitindo dados apenas quando ocorre uma mudança no valor do sensor — reduzindo o tráfego e o consumo de energia em dispositivos restritos. Dessa forma, o TATU fornece uma camada de abstração simples e eficiente sobre o MQTT, permitindo o desenvolvimento de sistemas IoT escaláveis, interoperáveis e de fácil integração com plataformas na borda ou na nuvem.
+
 Request GET for a specific sensor: 
 {"method":"GET", "sensor":"sensorName"}
 
