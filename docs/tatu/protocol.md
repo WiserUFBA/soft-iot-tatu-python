@@ -52,25 +52,19 @@ Resposta gerada pela implementação atual segue a estrutura:
 }
 ```
 
-Observação: o README histórico mostra exemplos de payloads com objeto em alguns trechos, enquanto `tatu.py` atualmente monta `payload.sensors` como uma lista de objetos. Para a implantação, considere o comportamento do código executado como referência e valide os consumidores com mensagens reais.
+Observação: o README histórico mostra exemplos de payloads com objeto em alguns trechos, enquanto `tatu.py` atualmente monta `payload.sensors` como uma lista de objetos. Considere o comportamento do código executado como referência e valide consumidores com mensagens reais.
 
 ### Leitura de todos os sensores
 
 Para solicitar todos os sensores de um dispositivo, a implementação compara o campo `sensor` ao `deviceName`.
 
-Exemplo:
-
 ```json
-{"method":"GET", "sensor":"ic-lab01-node01"}
+{"method":"GET", "sensor":"pizerosensor01"}
 ```
-
-A resposta inclui os sensores configurados para aquele nó.
 
 ## FLOW
 
 FLOW permite coletar dados em uma frequência e publicá-los em outra.
-
-Requisição:
 
 ```json
 {
@@ -83,20 +77,14 @@ Requisição:
 }
 ```
 
-Significado:
-
 - `collect = 5`: ler o sensor a cada 5 segundos;
 - `publish = 30`: publicar o conjunto de leituras quando o tempo acumulado atingir 30 segundos.
-
-A implementação mantém as leituras temporariamente e publica um payload com os valores acumulados.
 
 Para todos os sensores do dispositivo, use o `deviceName` no campo `sensor`.
 
 ## EVENT
 
 EVENT monitora um sensor e publica quando o valor muda.
-
-Requisição:
 
 ```json
 {
@@ -131,7 +119,7 @@ A identificação do processo segue o padrão interno:
 
 A mensagem STOP utiliza `target` para indicar qual operação deve ser interrompida.
 
-Antes de usar STOP na infraestrutura real, a equipe deve testar e registrar exemplos concretos de mensagens válidas, pois o README atual não documenta esse método com o mesmo nível de detalhe dos demais.
+Antes de usar STOP em produção, teste e registre exemplos concretos de mensagens válidas, pois o README atual não documenta esse método com o mesmo nível de detalhe dos demais.
 
 ## POST
 
@@ -139,15 +127,11 @@ O protocolo possui intenção de suporte a POST/atuadores e há código relacion
 
 Em `tatu.py`, a função `buildPostAnwserDevice()` existe, porém o despacho em `main()` atualmente não a executa: para `met == "POST"`, o código faz apenas `pass`.
 
-Portanto:
-
-> **Não considerar POST funcional na implantação inicial sem implementação e testes adicionais.**
+> **Não considerar POST funcional sem implementação e testes adicionais.**
 
 ## Erros
 
 Quando uma operação não consegue localizar/ler um sensor, a implementação publica mensagens no tópico de erro.
-
-Formato usado no código:
 
 ```json
 {
@@ -156,8 +140,6 @@ Formato usado no código:
   "message":"..."
 }
 ```
-
-O tratamento atual utiliza exceções genéricas em vários pontos. Durante a implantação, registrem os erros reais encontrados e o contexto em que ocorreram.
 
 ## Convenção de nomes de sensores
 
@@ -171,11 +153,9 @@ soundSensor
 co2Sensor
 ```
 
-Na implementação atual, esse nome tem consequência direta: deve existir uma função com o mesmo nome em `sensors.py`.
+Na implementação atual, esse nome deve corresponder a uma função com o mesmo nome em `sensors.py`.
 
 ## Checklist de validação do protocolo
-
-Para cada novo tipo de nó, validar e registrar:
 
 - [ ] conexão com broker;
 - [ ] assinatura do tópico `/REQ/#`;
@@ -186,4 +166,4 @@ Para cada novo tipo de nó, validar e registrar:
 - [ ] EVENT em sensor compatível;
 - [ ] STOP de FLOW/EVENT;
 - [ ] mensagem de erro para sensor inexistente;
-- [ ] formato real dos payloads consumidos pelo storage/AI Box.
+- [ ] formato real dos payloads validado.

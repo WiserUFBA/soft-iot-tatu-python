@@ -1,6 +1,8 @@
-# Implantação TATU no Instituto de Computação (IC/UFBA)
+# Implantação inicial no Instituto de Computação (IC/UFBA)
 
-Este documento organiza a primeira fase do trabalho da equipe PIBIC/PIBITI: colocar uma infraestrutura IoT mínima, estável e documentada em funcionamento no IC.
+> **Documento específico do projeto PIBIC/PIBITI.** Mantido temporariamente neste repositório porque o TATU será usado na infraestrutura inicial. Deve ser migrado posteriormente para o repositório próprio do projeto.
+
+Este documento organiza a primeira fase do trabalho da equipe: colocar uma infraestrutura IoT mínima, estável e documentada em funcionamento no IC.
 
 ## Objetivo da fase
 

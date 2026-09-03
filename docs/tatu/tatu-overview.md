@@ -24,16 +24,14 @@ Aplicação / consumidor
 
 ### `main.py`
 
-É o processo principal do nó.
+É o processo principal do nó. Atualmente ele:
 
-Responsabilidades atuais:
-
-- carregar `config.json`;
-- conectar ao broker MQTT;
-- assinar o tópico de requisições do dispositivo;
-- receber mensagens JSON;
-- tratar `STOP`;
-- criar um processo para cada operação TATU iniciada.
+- carrega `config.json`;
+- conecta ao broker MQTT;
+- assina o tópico de requisições do dispositivo;
+- recebe mensagens JSON;
+- trata `STOP`;
+- cria um processo para cada operação TATU iniciada.
 
 O tópico assinado é construído como:
 
@@ -51,15 +49,13 @@ A implementação atual suporta operacionalmente:
 - `FLOW` — coleta periódica com publicação periódica;
 - `EVENT` — publicação quando o valor muda.
 
-Há código referente a `POST`, mas o fluxo não está concluído no estado atual do repositório. Portanto, a equipe não deve assumir que `POST` está pronto para uso sem validação adicional.
+Há código referente a `POST`, mas o fluxo não está concluído no estado atual do repositório. Portanto, não se deve assumir que `POST` está pronto para uso sem validação adicional.
 
 ### `sensors.py`
 
 É a camada mais diretamente editada para adaptar um nó a sensores específicos.
 
 Na implementação atual, o nome da função Python precisa ser igual ao nome do sensor no `config.json`.
-
-Exemplo:
 
 ```python
 def humiditySensor():
@@ -76,9 +72,7 @@ O TATU usa `getattr()` para localizar essa função durante a execução.
 
 ### `config.json`
 
-Define a identidade do nó, sensores disponíveis e parâmetros MQTT.
-
-Exemplo conceitual:
+Define a identidade do nó, sensores disponíveis e parâmetros MQTT:
 
 ```text
 deviceName
@@ -95,9 +89,7 @@ topicErr
 
 ### `config.py`
 
-Fornece uma aplicação Flask simples para visualizar/alterar parte de `config.json` por meio de uma interface web.
-
-Ela não é necessária para entender o protocolo e pode ser tratada como uma ferramenta opcional de configuração.
+Fornece uma aplicação Flask simples para visualizar/alterar parte de `config.json` por meio de uma interface web. É uma ferramenta opcional de configuração e não é necessária para compreender o protocolo.
 
 ### `sensorsExamples/`
 
@@ -122,8 +114,8 @@ Fluxo simplificado:
 4. tatu.py identifica o sensor solicitado
 5. tatu.py procura temperatureSensor() em sensors.py
 6. a função lê o sensor
-7. tatu.py monta resposta JSON
-8. resposta é publicada em /RES
+7. tatu.py monta a resposta JSON
+8. a resposta é publicada em /RES
 ```
 
 ## Fluxo FLOW
@@ -132,8 +124,6 @@ Fluxo simplificado:
 
 - `collect`: intervalo entre leituras;
 - `publish`: intervalo entre publicações.
-
-Exemplo:
 
 ```json
 {
@@ -151,13 +141,9 @@ acumular leituras
 publicar aproximadamente a cada 30 s
 ```
 
-Isso permite reduzir a quantidade de mensagens MQTT sem necessariamente reduzir a frequência de amostragem.
-
 ## Fluxo EVENT
 
 `EVENT` realiza leituras periódicas e publica quando o valor observado muda.
-
-Exemplo:
 
 ```json
 {
@@ -169,9 +155,7 @@ Exemplo:
 
 É especialmente útil para sensores cujo estado muda de forma esporádica.
 
-## Modelo mental para o projeto PIBIC/PIBITI
-
-Durante a implantação inicial no IC, pensem em cada nó como:
+## Modelo mental de um nó
 
 ```text
 Nó físico
@@ -183,24 +167,9 @@ Nó físico
 └── conexão de rede com o broker
 ```
 
-E na infraestrutura completa como:
+## Limitações conhecidas da implementação atual
 
-```text
-[Nós IoT + TATU]
-        |
-       MQTT
-        |
-        v
-[Broker no servidor]
-        |
-        +--> [Persistência dos dados]
-        |
-        +--> [AI Box]
-```
-
-## Limitações que os alunos devem conhecer
-
-Sem refatorar nada agora, é importante reconhecer algumas características do código atual:
+Sem propor refatoração neste momento, é importante reconhecer algumas características do código atual:
 
 - configuração depende de caminhos/arquivos locais;
 - sensores são descobertos pelo nome da função;
@@ -210,4 +179,4 @@ Sem refatorar nada agora, é importante reconhecer algumas características do c
 - exemplos de hardware têm idades e dependências diferentes;
 - ainda não há uma suíte de testes automatizados consolidada.
 
-Esses pontos não são tarefas de refatoração neste momento. Devem apenas ser registrados durante a implantação para orientar melhorias futuras.
+Esses pontos devem ser registrados durante o uso para orientar melhorias futuras.
