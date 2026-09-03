@@ -1,22 +1,21 @@
-# Documentação TATU
+# Documentação
 
-Documentação de onboarding e implantação para a equipe PIBIC/PIBITI do WISER/UFBA.
+A documentação deste repositório está dividida em duas áreas para evitar misturar o **TATU** com a documentação específica de projetos que utilizam o protocolo.
 
-## Ordem recomendada de leitura
+## 1. TATU
 
-1. [Visão geral do TATU](tatu-overview.md)
-2. [Getting Started](getting-started.md)
-3. [Protocolo e mensagens](protocol.md)
-4. [Implantação no IC](deployment-ic.md)
+Documentação permanente deste repositório:
 
-## Escopo atual
+- [Visão geral e índice](tatu/README.md)
+- [Visão geral do TATU](tatu/tatu-overview.md)
+- [Getting Started](tatu/getting-started.md)
+- [Protocolo e mensagens](tatu/protocol.md)
 
-Esta documentação descreve **a implementação atual do repositório** e como usá-la na primeira infraestrutura IoT do projeto.
+Essa área deve conter apenas conteúdo reutilizável sobre o TATU e sua implementação Python.
 
-Nesta fase, a prioridade é:
+## 2. Projeto PIBIC/PIBITI — temporário
 
-```text
-entender -> executar -> integrar sensores reais -> implantar -> documentar
-```
+- [Documentação temporária do projeto](project-pibic-pibiti/README.md)
+- [Implantação inicial no IC/UFBA](project-pibic-pibiti/deployment-ic.md)
 
-Refatorações maiores ou uma futura modularização do TATU deverão ser discutidas apenas depois que a infraestrutura mínima estiver funcionando e a equipe tiver evidências concretas das limitações encontradas.
+> **Importante:** essa segunda área está aqui provisoriamente. Ela descreve a infraestrutura e as atividades do projeto PIBIC/PIBITI, não o protocolo TATU. Quando o repositório próprio do projeto estiver organizado, esse conteúdo deverá ser migrado para lá.
