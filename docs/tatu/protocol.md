@@ -35,7 +35,7 @@ Requisição:
 {"method":"GET", "sensor":"temperatureSensor"}
 ```
 
-Resposta gerada pela implementação atual segue a estrutura:
+Resposta:
 
 ```json
 {
@@ -46,13 +46,13 @@ Resposta gerada pela implementação atual segue a estrutura:
   },
   "payload": {
     "sensors": [
-      {"temperatureSensor": ["27.4"]}
+      {"temperatureSensor": [27.4]}
     ]
   }
 }
 ```
 
-Observação: o README histórico mostra exemplos de payloads com objeto em alguns trechos, enquanto `tatu.py` atualmente monta `payload.sensors` como uma lista de objetos. Considere o comportamento do código executado como referência e valide consumidores com mensagens reais.
+`payload.sensors` é uma lista de objetos — um por sensor lido.
 
 ### Leitura de todos os sensores
 
@@ -80,6 +80,8 @@ FLOW permite coletar dados em uma frequência e publicá-los em outra.
 - `collect = 5`: ler o sensor a cada 5 segundos;
 - `publish = 30`: publicar o conjunto de leituras quando o tempo acumulado atingir 30 segundos.
 
+Se `time` for omitido, `collect` e `publish` assumem o valor padrão de 1 segundo.
+
 Para todos os sensores do dispositivo, use o `deviceName` no campo `sensor`.
 
 ## EVENT
@@ -91,8 +93,7 @@ EVENT monitora um sensor e publica quando o valor muda.
   "method":"EVENT",
   "sensor":"motionSensor",
   "time": {
-    "collect":1,
-    "publish":0
+    "collect":1
   }
 }
 ```
@@ -109,25 +110,50 @@ A versão atual não implementa EVENT para todos os sensores de um dispositivo c
 
 ## STOP
 
-`main.py` trata mensagens com método `STOP` para terminar um processo TATU anteriormente iniciado.
+Encerra uma operação FLOW ou EVENT em andamento.
 
-A identificação do processo segue o padrão interno:
+### Mensagem de requisição
 
-```text
-<METHOD>_<deviceName>_<sensorName>
+```json
+{"method":"STOP", "target":"FLOW", "sensor":"temperatureSensor"}
 ```
 
-A mensagem STOP utiliza `target` para indicar qual operação deve ser interrompida.
+Campos:
 
-Antes de usar STOP em produção, teste e registre exemplos concretos de mensagens válidas, pois o README atual não documenta esse método com o mesmo nível de detalhe dos demais.
+- `target`: método a encerrar (`FLOW` ou `EVENT`); padrão `FLOW` quando omitido;
+- `sensor`: nome do sensor usado na operação a encerrar.
+
+O identificador interno da thread-alvo é `<target>_<deviceName>_<sensor>`. A operação é encerrada imediatamente — o loop para ao receber o sinal, sem aguardar o próximo ciclo de coleta.
+
+Não há resposta publicada para STOP.
 
 ## POST
 
-O protocolo possui intenção de suporte a POST/atuadores e há código relacionado a essa operação, mas o fluxo está incompleto na implementação atual.
+Envia um valor para um atuador e publica a confirmação.
 
-Em `tatu.py`, a função `buildPostAnwserDevice()` existe, porém o despacho em `main()` atualmente não a executa: para `met == "POST"`, o código faz apenas `pass`.
+### Mensagem de requisição
 
-> **Não considerar POST funcional sem implementação e testes adicionais.**
+```json
+{"method":"POST", "sensor":"ledActuator", "value":true}
+```
+
+A função `ledActuator(value)` deve existir em `sensors.py` e aceitar o valor recebido como argumento.
+
+### Resposta
+
+```json
+{
+  "header": {
+    "method": "POST",
+    "device": "deviceName",
+    "sensor": "ledActuator",
+    "value": true
+  },
+  "payload": {"value": true}
+}
+```
+
+O campo `value` no payload reflete o valor retornado pela função em `sensors.py`.
 
 ## Erros
 
@@ -165,5 +191,6 @@ Na implementação atual, esse nome deve corresponder a uma função com o mesmo
 - [ ] FLOW do dispositivo, quando necessário;
 - [ ] EVENT em sensor compatível;
 - [ ] STOP de FLOW/EVENT;
+- [ ] POST em atuador;
 - [ ] mensagem de erro para sensor inexistente;
 - [ ] formato real dos payloads validado.
