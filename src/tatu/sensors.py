@@ -6,7 +6,6 @@ import random
 # There are samples of real sensors implementations in the src/sensorsExamples
 # folder. You can adapt those examples to your needs.
 
-
 # The name of sensors functions should be exactly the same as in config.json
 
 def humiditySensor():
@@ -15,12 +14,12 @@ def humiditySensor():
 def temperatureSensor():
     return random.randint(25, 38)
 
-def ledActuator(s = None):
-	if s==None:
-		return bool(random.randint(0, 1))
-	else:
-		if s:
-			print("1")
-		else:
-			print("0")
-		return s
+def ledActuator(s=None):
+    if s is None:
+        return bool(random.randint(0, 1))
+    else:
+        if s:
+            print("1")
+        else:
+            print("0")
+        return s
