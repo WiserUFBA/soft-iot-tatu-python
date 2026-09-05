@@ -3,13 +3,13 @@ import sensors
 import json
 import traceback
 
-from time import sleep
-
 # You don't need to change this file. Just change sensors.py and config.json
 
 
 class virtualSensor():
-    def __init__(self, idP, deviceName, sensorName, sensorsList, met, topic, topicError, pub_client, collectTime, publishTime):
+    def __init__(self, idP, deviceName, sensorName, sensorsList, met, topic,
+                 topicError, pub_client, collectTime, publishTime, stop_event,
+                 post_value=None):
         self.processID = idP
         self.deviceName = deviceName
         self.sensorName = sensorName
@@ -20,7 +20,8 @@ class virtualSensor():
         self.pub_client = pub_client
         self.publishTime = publishTime
         self.collectTime = collectTime
-        self.run()
+        self.stop_event = stop_event
+        self.post_value = post_value
 
     def run(self):
         print("Starting virtual sensor " + self.processID)
@@ -47,7 +48,7 @@ class virtualSensor():
             for x in self.sensorsList:
                 sensor_dict[x["name"]] = []
 
-            while True:
+            while not self.stop_event.is_set():
                 for i in self.sensorsList:
                     sensorName = i["name"]
                     method_fn = getattr(sensors, sensorName)
@@ -73,7 +74,9 @@ class virtualSensor():
                     for name in sensor_dict:
                         sensor_dict[name] = []
 
-                sleep(self.collectTime)
+                # wait() returns True if stop was signalled — exits immediately on STOP
+                if self.stop_event.wait(timeout=self.collectTime):
+                    break
 
         except Exception:
             print(traceback.format_exc())
@@ -98,8 +101,8 @@ class virtualSensor():
             self.pub_client.publish(self.topic, response)
             self.pub_client.loop(timeout=1.0)
 
-            while True:
-                sleep(self.collectTime)
+            # wait() returns True if stop was signalled; loop while it times out
+            while not self.stop_event.wait(timeout=self.collectTime):
                 aux = method_fn()
                 if aux != value:
                     value = aux
@@ -157,7 +160,7 @@ class virtualSensor():
         # Request: {"method":"POST", "sensor":"sensorName", "value":value}
         try:
             method_fn = getattr(sensors, self.sensorName)
-            result = method_fn(self.postValue)
+            result = method_fn(self.post_value)
             header = {
                 "method": "POST",
                 "device": self.deviceName,
@@ -183,7 +186,7 @@ def on_disconnect(mqttc, obj, msg):
     print("disconnected tatu!")
 
 
-def main(data, msg):
+def main(data, msg, stop_event):
     mqttBroker = data["mqttBroker"]
     mqttPort = data["mqttPort"]
     mqttUsername = data["mqttUsername"]
@@ -193,9 +196,18 @@ def main(data, msg):
     topicError = data["topicPrefix"] + deviceName + data["topicErr"]
     sensorsList = list(data["sensors"])
 
-    msgJson = json.loads(msg.payload)
-    sensorName = msgJson["sensor"]
-    met = msgJson["method"]
+    try:
+        msgJson = json.loads(msg.payload)
+    except Exception:
+        print(f"Invalid JSON payload: {msg.payload!r}")
+        return
+
+    sensorName = msgJson.get("sensor", deviceName)
+    met = msgJson.get("method", "")
+
+    if not met:
+        print("Message missing 'method' field, ignoring.")
+        return
 
     found = False
     if sensorName != deviceName:
@@ -221,14 +233,26 @@ def main(data, msg):
     pub_client.loop(timeout=1.0)  # aguarda CONNACK antes de publicar
 
     if met == "POST":
-        postValue = msgJson.get("value")
-        sensor = virtualSensor(idP, deviceName, sensorName, sensorsList, met, topic, topicError, pub_client, 0, 0)
-        sensor.postValue = postValue
+        post_value = msgJson.get("value")
+        sensor = virtualSensor(idP, deviceName, sensorName, sensorsList, met,
+                                topic, topicError, pub_client, 0, 0, stop_event,
+                                post_value=post_value)
     elif met == "GET":
-        virtualSensor(idP, deviceName, sensorName, sensorsList, met, topic, topicError, pub_client, 0, 0)
+        sensor = virtualSensor(idP, deviceName, sensorName, sensorsList, met,
+                                topic, topicError, pub_client, 0, 0, stop_event)
     elif met == "FLOW":
-        time_cfg = msgJson["time"]
-        virtualSensor(idP, deviceName, sensorName, sensorsList, met, topic, topicError, pub_client, time_cfg["collect"], time_cfg["publish"])
+        time_cfg = msgJson.get("time", {})
+        collect = time_cfg.get("collect", 1)
+        publish = time_cfg.get("publish", collect)
+        sensor = virtualSensor(idP, deviceName, sensorName, sensorsList, met,
+                                topic, topicError, pub_client, collect, publish, stop_event)
     elif met == "EVENT":
-        time_cfg = msgJson["time"]
-        virtualSensor(idP, deviceName, sensorName, sensorsList, met, topic, topicError, pub_client, time_cfg["collect"], 0)
+        time_cfg = msgJson.get("time", {})
+        collect = time_cfg.get("collect", 1)
+        sensor = virtualSensor(idP, deviceName, sensorName, sensorsList, met,
+                                topic, topicError, pub_client, collect, 0, stop_event)
+    else:
+        print(f"Unknown method: {met}")
+        return
+
+    sensor.run()
