@@ -6,11 +6,11 @@ Este guia explica como executar a implementação atual do TATU e validar um nó
 
 ```text
 soft-iot-tatu-python/
-├── README.md
 └── src/
-    ├── requests.txt
+    ├── requests.txt          (dependências antigas — referência histórica)
     ├── sensorsExamples/
     └── tatu/
+        ├── requirements.txt  ← instalar com pip install -r
         ├── config.json
         ├── config.py
         ├── main.py
@@ -29,9 +29,13 @@ Arquivos centrais:
 
 ## 2. Dependências
 
-A implementação usa Python e MQTT. O código atual importa principalmente:
+```bash
+pip install -r src/tatu/requirements.txt
+```
 
-- `paho-mqtt`;
+Requer Python 3.11+ (Raspberry Pi OS Bookworm ou equivalente). A implementação usa principalmente:
+
+- `paho-mqtt>=2.0.0`;
 - `flask`, caso a página opcional de configuração seja utilizada;
 - bibliotecas específicas do hardware para sensores reais.
 
@@ -88,6 +92,13 @@ Configuração correspondente:
 {"type":"float", "name":"temperatureSensor"}
 ```
 
+Para atuadores (POST), a função deve aceitar o valor recebido:
+
+```python
+def ledActuator(value):
+    return value  # substituir por lógica real de GPIO
+```
+
 O arquivo `src/tatu/sensors.py` inclui sensores simulados com valores aleatórios. Eles são úteis para validar MQTT e o protocolo antes de conectar hardware real.
 
 Depois, consulte `src/sensorsExamples/` e adapte a leitura ao sensor físico utilizado.
@@ -132,13 +143,20 @@ dev/pizerosensor01/ERR
 3. publique uma requisição `GET`;
 4. confirme a resposta em `/RES`;
 5. teste `FLOW`;
-6. teste `EVENT`;
-7. somente depois substitua as funções simuladas por sensores físicos.
+6. teste `STOP` para encerrar o FLOW;
+7. teste `EVENT`;
+8. somente depois substitua as funções simuladas por sensores físicos.
 
 Exemplo GET:
 
 ```json
 {"method":"GET", "sensor":"temperatureSensor"}
+```
+
+Exemplo STOP (encerrar FLOW):
+
+```json
+{"method":"STOP", "target":"FLOW", "sensor":"temperatureSensor"}
 ```
 
 ## 7. Critério mínimo de validação de um nó
@@ -150,6 +168,7 @@ Um nó pode ser considerado funcional quando:
 - responde a `GET`;
 - opera `FLOW` quando aplicável;
 - opera `EVENT` quando aplicável;
+- `STOP` encerra operações corretamente;
 - publica respostas no tópico esperado;
 - a configuração utilizada está documentada sem expor credenciais.
 
@@ -157,7 +176,6 @@ Um nó pode ser considerado funcional quando:
 
 - não versionar senhas reais;
 - não alterar o formato do protocolo sem necessidade;
-- não assumir que `POST` está funcional sem testes;
 - validar exemplos de sensores físicos antes de reutilizá-los em hardware atual.
 
 ## Próxima leitura
