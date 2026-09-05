@@ -1,21 +1,16 @@
 {
-    "deviceName": "pizerosensor01", 
+    "deviceName": "pizerosensor01",
     "sensors": [
-        {
-            "type": "int", 
-            "name": "humiditySensor"
-        }, 
-        {
-            "type": "int", 
-            "name": "temperatureSensor"
-        }
-    ], 
-    "mqttBroker": "10.8.0.30", 
-    "topicErr": "/ERR", 
-    "mqttPort": 1883, 
-    "mqttPassword": "", 
-    "topicPrefix": "dev/", 
-    "topicRes": "/RES", 
-    "mqttUsername": "", 
-    "topicReq": "/REQ"
+        {"type": "int",  "name": "humiditySensor"},
+        {"type": "int",  "name": "temperatureSensor"},
+        {"type": "bool", "name": "ledActuator"}
+    ],
+    "mqttBroker": "10.8.0.30",
+    "mqttPort": 1883,
+    "mqttUsername": "",
+    "mqttPassword": "",
+    "topicPrefix": "dev/",
+    "topicReq": "/REQ",
+    "topicRes": "/RES",
+    "topicErr": "/ERR"
 }
