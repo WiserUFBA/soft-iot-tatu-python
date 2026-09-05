@@ -35,7 +35,7 @@ class virtualSensor():
         elif self.met == "POST":
             self.buildPostAnswerDevice()
 
-        print("Stopping process " + self.processID)
+        print("Stopping thread " + self.processID)
 
     def buildFlowAnswerDevice(self):
         # Request: {"method": "FLOW", "sensor": "sensorName", "time":{"collect":collectTime,"publish":publishTime}}
