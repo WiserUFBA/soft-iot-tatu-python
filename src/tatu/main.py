@@ -6,7 +6,7 @@ from time import sleep
 
 # You don't need to change this file. Just change sensors.py and config.json
 
-_threads = []
+_threads = {}  # thread_id -> (thread, stop_event)
 _threads_lock = threading.Lock()
 
 
@@ -30,7 +30,7 @@ def on_message(mqttc, obj, msg):
         except Exception:
             print("Invalid JSON payload, ignoring message.")
             return
-        if tatu_msg["method"] == "STOP":
+        if tatu_msg.get("method") == "STOP":
             stop_sensor(obj, tatu_msg)
         else:
             init_sensor(obj, tatu_msg, msg)
@@ -46,31 +46,37 @@ def on_disconnect(mqttc, obj, rc):
 def init_sensor(obj, tatu_msg, msg):
     import tatu
     thread_id = _make_thread_id(tatu_msg["method"], obj["deviceName"], tatu_msg["sensor"])
-    t = threading.Thread(target=tatu.main, args=(obj, msg), name=thread_id, daemon=True)
+    stop_event = threading.Event()
+    t = threading.Thread(target=tatu.main, args=(obj, msg, stop_event), name=thread_id, daemon=True)
     with _threads_lock:
-        _threads.append(t)
+        existing = _threads.pop(thread_id, None)
+        if existing:
+            _, old_stop = existing
+            old_stop.set()
+        _threads[thread_id] = (t, stop_event)
     t.start()
     _cleanup_threads()
 
 
 def stop_sensor(obj, tatu_msg):
-    thread_id = _make_thread_id(tatu_msg["target"], obj["deviceName"], tatu_msg["sensor"])
+    target_method = tatu_msg.get("target", "FLOW")
+    sensor_name = tatu_msg.get("sensor", "")
+    thread_id = _make_thread_id(target_method, obj["deviceName"], sensor_name)
     with _threads_lock:
-        for t in list(_threads):
-            if t.name == thread_id:
-                print("Stopping thread " + t.name)
-                _threads.remove(t)
-                # Threads cannot be forcibly stopped; daemon=True ensures they
-                # are cleaned up when the process exits. A future refactor can
-                # add a stop Event per thread.
-                break
+        entry = _threads.pop(thread_id, None)
+    if entry:
+        t, stop_event = entry
+        stop_event.set()
+        print(f"Stopping thread {thread_id}")
+    else:
+        print(f"No running thread found for {thread_id}")
 
 
 def _cleanup_threads():
     with _threads_lock:
-        done = [t for t in _threads if not t.is_alive()]
-        for t in done:
-            _threads.remove(t)
+        done = [tid for tid, (t, _) in _threads.items() if not t.is_alive()]
+        for tid in done:
+            del _threads[tid]
 
 
 while True:
