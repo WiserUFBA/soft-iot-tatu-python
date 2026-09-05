@@ -51,8 +51,9 @@ Exemplo:
 {
   "deviceName": "pizerosensor01",
   "sensors": [
-    {"type": "int", "name": "humiditySensor"},
-    {"type": "int", "name": "temperatureSensor"}
+    {"type": "int",  "name": "humiditySensor"},
+    {"type": "int",  "name": "temperatureSensor"},
+    {"type": "bool", "name": "ledActuator"}
   ],
   "mqttBroker": "10.8.0.30",
   "mqttPort": 1883,
@@ -68,7 +69,7 @@ Exemplo:
 Campos principais:
 
 - `deviceName`: identificador único do nó;
-- `sensors`: sensores disponíveis;
+- `sensors`: sensores e atuadores disponíveis;
 - `mqttBroker`: endereço do broker MQTT;
 - `mqttPort`: porta MQTT;
 - `mqttUsername` / `mqttPassword`: credenciais, quando utilizadas;
@@ -77,31 +78,28 @@ Campos principais:
 - `topicRes`: sufixo de respostas;
 - `topicErr`: sufixo de erros.
 
-## 4. Implementando sensores
+## 4. Implementando sensores e atuadores
 
 O código atual localiza dinamicamente uma função em `sensors.py` cujo nome precisa ser exatamente igual ao `name` configurado em `config.json`.
+
+**Sensor** (sem argumento):
 
 ```python
 def temperatureSensor():
     return 27.4
 ```
 
-Configuração correspondente:
-
-```json
-{"type":"float", "name":"temperatureSensor"}
-```
-
-Para atuadores (POST), a função deve aceitar o valor recebido:
+**Atuador** (POST — aceita o valor recebido):
 
 ```python
-def ledActuator(value):
-    return value  # substituir por lógica real de GPIO
+def ledActuator(value=None):
+    if value is None:
+        return False        # leitura simulada
+    print("LED:", value)
+    return value            # substituir por lógica real de GPIO
 ```
 
-O arquivo `src/tatu/sensors.py` inclui sensores simulados com valores aleatórios. Eles são úteis para validar MQTT e o protocolo antes de conectar hardware real.
-
-Depois, consulte `src/sensorsExamples/` e adapte a leitura ao sensor físico utilizado.
+O arquivo `src/tatu/sensors.py` inclui sensores simulados com valores aleatórios e `ledActuator` para teste de POST. Consulte `src/sensorsExamples/` para adaptação a hardware real.
 
 ## 5. Executando
 
@@ -144,19 +142,26 @@ dev/pizerosensor01/ERR
 4. confirme a resposta em `/RES`;
 5. teste `FLOW`;
 6. teste `STOP` para encerrar o FLOW;
-7. teste `EVENT`;
-8. somente depois substitua as funções simuladas por sensores físicos.
+7. teste `POST` com `ledActuator`;
+8. teste `EVENT`;
+9. somente depois substitua as funções simuladas por sensores físicos.
 
-Exemplo GET:
+Exemplos:
 
 ```json
 {"method":"GET", "sensor":"temperatureSensor"}
 ```
 
-Exemplo STOP (encerrar FLOW):
+```json
+{"method":"FLOW", "sensor":"temperatureSensor", "time":{"collect":5,"publish":30}}
+```
 
 ```json
 {"method":"STOP", "target":"FLOW", "sensor":"temperatureSensor"}
+```
+
+```json
+{"method":"POST", "sensor":"ledActuator", "value":true}
 ```
 
 ## 7. Critério mínimo de validação de um nó
@@ -167,8 +172,9 @@ Um nó pode ser considerado funcional quando:
 - conecta ao broker;
 - responde a `GET`;
 - opera `FLOW` quando aplicável;
-- opera `EVENT` quando aplicável;
 - `STOP` encerra operações corretamente;
+- opera `EVENT` quando aplicável;
+- opera `POST` em atuadores quando aplicável;
 - publica respostas no tópico esperado;
 - a configuração utilizada está documentada sem expor credenciais.
 
