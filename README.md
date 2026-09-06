@@ -65,7 +65,41 @@ deviceName examples:
 - pisensor01
 - galileo01
 
+---
 
+## Sensor examples
+
+Arquivos `sensors.py` prontos para uso estão em [`src/sensorsExamples/`](src/sensorsExamples/):
+
+| Arquivo | Hardware | Sensores / variáveis TATU |
+|---------|----------|---------------------------|
+| [`sensors_rpi4_grove.py`](src/sensorsExamples/sensors_rpi4_grove.py) | RPi4 + Grove Base HAT | `temperatureSensor`, `humiditySensor`, `lightSensor`, `soundSensor`, `ultrasonicSensor`, `vocSensor`, `noxSensor` |
+| [`sensors_rpi_zero_grove.py`](src/sensorsExamples/sensors_rpi_zero_grove.py) | RPi Zero W 2 + Grove Base HAT | `temperatureSensor`, `humiditySensor`, `lightSensor`, `soundSensor`, `ultrasonicSensor` |
+
+Instale as dependências de hardware antes de usar os exemplos Grove:
+
+```bash
+pip install -r src/sensorsExamples/requirements-grove-hat.txt
+```
+
+Para usar um exemplo, copie para `src/tatu/sensors.py`:
+
+```bash
+# RPi4 + Grove Base HAT
+cp src/sensorsExamples/sensors_rpi4_grove.py src/tatu/sensors.py
+
+# RPi Zero W 2 + Grove Base HAT
+cp src/sensorsExamples/sensors_rpi_zero_grove.py src/tatu/sensors.py
+```
+
+Valide cada função manualmente antes de iniciar o TATU (executar de dentro de `src/tatu/`):
+
+```bash
+cd src/tatu
+python3 -c "import sensors; print(sensors.temperatureSensor())"
+```
+
+---
 
 # IoT Sensor Taxonomy (camelCase Naming Convention for sensorName)
 
