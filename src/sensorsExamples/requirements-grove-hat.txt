@@ -1,15 +1,13 @@
-# Hardware dependencies for sensors_grove_hat.py
+# Hardware dependencies for sensors_rpi4_grove.py and sensors_rpi_zero_grove.py
 # Install alongside the base requirements.txt:
 #   pip install -r src/tatu/requirements.txt
 #   pip install -r src/sensorsExamples/requirements-grove-hat.txt
 
-# DHT22 via CircuitPython (requires libgpiod on Raspberry Pi OS)
-adafruit-circuitpython-dht>=3.7.0
-adafruit-blinka>=8.0.0
-
-# Grove Base HAT: ADC (Light/Sound via A0/A2) and Ultrasonic (D5)
+# Grove Base HAT: DHT22 (D16), ADC A0/A2 (Light/Sound), Ultrasonic (D5)
 seeed-python-grove>=0.2.0
 
-# SGP41 VOC/NOX sensor (I2C 0x59)
-sensirion-i2c-sgp41>=0.1.0
-sensirion-i2c-driver>=1.0.0
+# SGP41 VOC/NOX sensor (I2C 0x59) — rpi4 only
+# Comunicação via smbus2 (raw I2C). Não requer biblioteca Sensirion.
+# Nota: SGP41 não aparece em i2cdetect (clock stretching BCM2835);
+#   workaround: dtparam=i2c_arm_baudrate=10000 em /boot/firmware/config.txt
+smbus2>=0.4.0

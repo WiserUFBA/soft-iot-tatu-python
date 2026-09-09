@@ -2,66 +2,75 @@
 #
 # Copy this file to src/tatu/sensors.py to use with real hardware.
 # Install dependencies: pip install -r src/sensorsExamples/requirements-grove-hat.txt
-#   (seeed-python-grove and adafruit-circuitpython-dht only; sensirion not needed)
 #
 # Wiring (Grove Base HAT port → sensor):
 #   D16 (GPIO16) → DHT22          (temperatureSensor, humiditySensor)
-#   A0            → Light v1.2    (lightSensor)    — raw 12-bit ADC (0-4095)
-#   A2            → Sound/Mic     (soundSensor)    — raw 12-bit ADC (0-4095)
-#   D5  (GPIO5)  → Ultrasonic     (ultrasonicSensor) — cm, 1 decimal
+#   A0            → Light v1.2    (lightSensor)    — ADC 0, raw (0-4095)
+#   A2            → Sound/Mic     (soundSensor)    — ADC 2, raw (0-4095)
+#   D5  (GPIO5)  → Ultrasonic     (ultrasonicSensor) — cm, -1.0 se sem eco em 1 s
 #
-# SGP41 (vocSensor/noxSensor) is reserved for RPi4 in M1 — not wired here.
+# SGP41 (vocSensor/noxSensor) é reservado para RPi4 em M1 — não cabeado aqui.
 #
 # config.json sensors list for this node:
 #   temperatureSensor, humiditySensor, lightSensor, soundSensor, ultrasonicSensor
+#
+# Notas de hardware (implementação baseada no RPi4 validado no IC/UFBA em 2026-09-09;
+# ainda não validada no RPi Zero W 2 — issue #8 cobre a validação):
+#   - Grove Base HAT ADC responde em I2C 0x08 (não 0x04 como documenta a Seeed)
+#   - ultrasonicSensor usa thread daemon com timeout 1 s (evita bloqueio indefinido)
 
 import time
-import adafruit_dht
-import board
+import threading
+from grove.grove_temperature_humidity_sensor import DHT
 from grove.adc import ADC
 from grove.grove_ultrasonic_ranger import GroveUltrasonicRanger
 
-# --- hardware init ---
+_dht = DHT("22", 16)           # DHT22 em D16 (GPIO 16)
+_adc = ADC(0x08)               # Grove Base HAT ADC — validado em 0x08 (Seeed documenta 0x04)
+_ultrasonic = GroveUltrasonicRanger(5)  # Ultrasonic em D5 (GPIO 5)
 
-_dht = adafruit_dht.DHT22(board.D16)
-_adc = ADC()                            # Grove ADC (I2C 0x04) — A0 and A2 ports
-_ultrasonic = GroveUltrasonicRanger(5)  # D5 = GPIO5
-
-# --- DHT22 cache (reads both temp+humidity in one call; min 2.5s between reads) ---
-
-_dht_cache = (None, None)   # (temperature_C, humidity_pct)
-_dht_last_t = 0.0
-_DHT_MIN_INTERVAL = 2.5
+_dht_cache = {"humi": 0.0, "temp": 0.0, "ts": 0.0}
+_DHT_TTL = 3.0  # segundos — evita leitura dupla quando GET pede temp+humi juntos
 
 
-def _dht_measure():
-    global _dht_cache, _dht_last_t
-    now = time.monotonic()
-    if _dht_cache[0] is None or now - _dht_last_t >= _DHT_MIN_INTERVAL:
-        _dht_cache = (round(_dht.temperature, 1), round(_dht.humidity, 1))
-        _dht_last_t = now
-    return _dht_cache
+def _read_dht():
+    if time.monotonic() - _dht_cache["ts"] >= _DHT_TTL:
+        humi, temp = _dht.read()
+        _dht_cache.update(
+            {"humi": round(humi, 1), "temp": round(temp, 1), "ts": time.monotonic()}
+        )
+    return _dht_cache["humi"], _dht_cache["temp"]
 
 
-# --- sensor functions (names must match config.json exactly) ---
+# ── Funções TATU (nome = nome do sensor em config.json) ──────────────────────
 
 def temperatureSensor():
-    temp, _ = _dht_measure()
+    _, temp = _read_dht()
     return temp
 
 
 def humiditySensor():
-    _, humi = _dht_measure()
+    humi, _ = _read_dht()
     return humi
 
 
 def lightSensor():
-    return _adc.read(0)   # A0 port, 12-bit raw (0-4095)
+    return _adc.read(0)   # A0, raw (0-4095)
 
 
 def soundSensor():
-    return _adc.read(2)   # A2 port, 12-bit raw (0-4095)
+    return _adc.read(2)   # A2, raw (0-4095)
 
 
 def ultrasonicSensor():
-    return round(_ultrasonic.get_distance(), 1)   # cm
+    """Distância em cm. Retorna -1.0 se sem eco em 1 s."""
+    _result = [None]
+    def _measure():
+        try:
+            _result[0] = round(_ultrasonic.get_distance(), 1)
+        except Exception:
+            pass
+    t = threading.Thread(target=_measure, daemon=True)
+    t.start()
+    t.join(timeout=1.0)
+    return _result[0] if _result[0] is not None else -1.0
