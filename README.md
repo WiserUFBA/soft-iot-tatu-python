@@ -72,7 +72,7 @@ deviceName examples:
 Arquivos `sensors.py` prontos para uso estão em [`src/sensorsExamples/`](src/sensorsExamples/):
 
 | Arquivo | Hardware | Sensores / variáveis TATU |
-|---------|----------|---------------------------|
+|---------|----------|--------------------------|
 | [`sensors_rpi4_grove.py`](src/sensorsExamples/sensors_rpi4_grove.py) | RPi4 + Grove Base HAT | `temperatureSensor`, `humiditySensor`, `lightSensor`, `soundSensor`, `ultrasonicSensor`, `vocSensor`, `noxSensor` |
 | [`sensors_rpi_zero_grove.py`](src/sensorsExamples/sensors_rpi_zero_grove.py) | RPi Zero W 2 + Grove Base HAT | `temperatureSensor`, `humiditySensor`, `lightSensor`, `soundSensor`, `ultrasonicSensor` |
 
@@ -92,11 +92,95 @@ cp src/sensorsExamples/sensors_rpi4_grove.py src/tatu/sensors.py
 cp src/sensorsExamples/sensors_rpi_zero_grove.py src/tatu/sensors.py
 ```
 
+> **Se você usa `iot-infrastructure`:** o `run.sh` de cada device faz esse symlink automaticamente.
+> Não copie manualmente — o `run.sh` é o ponto de entrada correto.
+
 Valide cada função manualmente antes de iniciar o TATU (executar de dentro de `src/tatu/`):
 
 ```bash
 cd src/tatu
 python3 -c "import sensors; print(sensors.temperatureSensor())"
+```
+
+---
+
+## Notas de hardware — Grove Base HAT (IC/UFBA, validado 2026-09-09)
+
+Esses problemas já foram resolvidos nos arquivos de exemplo. Leia para não perder tempo depurando o que já tem solução.
+
+### ADC responde em 0x08, não 0x04
+
+A documentação da Seeed indica que o ADC do Grove Base HAT fica no endereço I2C `0x04`. No hardware do IC/UFBA (e provavelmente em outros), o ADC responde em **`0x08`**. Use sempre `ADC(0x08)` no código:
+
+```python
+from grove.adc import ADC
+_adc = ADC(0x08)   # 0x04 não funciona neste hardware
+```
+
+### SGP41 não aparece em i2cdetect
+
+O `i2cdetect -y 1` não mostra o SGP41 (endereço `0x59`) mesmo com o sensor corretamente conectado. Isso é um bug conhecido do BCM2835 (chip I2C do RPi): durante a fase de probe, o SGP41 estica o clock e o BCM2835 interpreta como NACK.
+
+**O sensor funciona normalmente para comunicação real** — apenas a probe do i2cdetect falha.
+
+**Workaround obrigatório:** adicionar em `/boot/firmware/config.txt` e reiniciar:
+
+```ini
+dtparam=i2c_arm_baudrate=10000
+```
+
+**Confirmar que o sensor está presente** (funciona mesmo sem aparecer no i2cdetect):
+
+```bash
+sudo i2ctransfer -y 1 w2@0x59 0x36 0x82 r9@0x59
+```
+
+Retornando 9 bytes → sensor OK. Se der erro → verificar cabo/porta.
+
+**Não use** `sensirion-i2c-sgp41` — os exemplos usam `smbus2` diretamente com CRC-8 manual, que é mais leve e não tem a dependência da biblioteca Sensirion.
+
+### ultrasonicSensor — timeout de 1 s
+
+O driver Grove do Ultrasonic Ranger pode bloquear indefinidamente se não houver eco (objeto fora da faixa ou ausente). Os exemplos resolvem isso com uma thread daemon e timeout:
+
+```python
+import threading
+
+def ultrasonicSensor():
+    _result = [None]
+    def _measure():
+        try:
+            _result[0] = round(_ultrasonic.get_distance(), 1)
+        except Exception:
+            pass
+    t = threading.Thread(target=_measure, daemon=True)
+    t.start()
+    t.join(timeout=1.0)
+    return _result[0] if _result[0] is not None else -1.0
+```
+
+Retorna `-1.0` se nenhum eco for recebido em 1 s. Seguro incluir no FLOW sem objeto na frente.
+
+### SGP41 — warmup de ~10 s
+
+O SGP41 precisa de ~10 s de conditioning antes de produzir leituras estáveis. Os exemplos fazem o conditioning em uma background thread ao importar o módulo, e retornam `-1` enquanto não estiver pronto:
+
+```python
+vocSensor()   # → -1 nos primeiros ~10 s, depois SRAW_VOC (0–65535)
+noxSensor()   # → -1 nos primeiros ~10 s, depois SRAW_NOX (0–65535)
+```
+
+O TATU não é bloqueado durante o warmup — os primeiros valores no FLOW virão como `-1`.
+
+**Os valores SRAW são sinais brutos** (0–65535). Para obter índices VOC/NOx (0–500) é necessário o Gas Index Algorithm (GIA) da Sensirion, que será aplicado no servidor.
+
+### Biblioteca DHT22 — grove, não adafruit
+
+Os exemplos usam `grove.grove_temperature_humidity_sensor.DHT`, não `adafruit_dht`. A biblioteca adafruit tem conflitos com o GPIO do Grove Base HAT no RPi:
+
+```python
+from grove.grove_temperature_humidity_sensor import DHT
+_dht = DHT("22", 16)   # DHT22 em GPIO 16 (porta D16)
 ```
 
 ---
