@@ -189,4 +189,5 @@ Published to `/ERR` when a request cannot be fulfilled:
 
 ## Related projects
 
+- [soft-iot-tatu-spec](https://github.com/WiserUFBA/soft-iot-tatu-spec) — canonical protocol specification
 - [soft-iot-tatu-upython](https://github.com/WiserUFBA/soft-iot-tatu-upython) — MicroPython version (ESP8266)
