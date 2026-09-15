@@ -1,6 +1,7 @@
 import paho.mqtt.client as pub
 import sensors
 import json
+import time
 import traceback
 
 # You don't need to change this file. Just change sensors.py and config.json
@@ -23,9 +24,18 @@ class virtualSensor():
         self.stop_event = stop_event
         self.post_value = post_value
 
+    def _pub_err(self, code, message=''):
+        payload = {'code': code}
+        if message:
+            payload['message'] = message
+        self.pub_client.publish(self.topicError, json.dumps(payload))
+
+    def _advance(self, deadline, period, now):
+        diff = now - deadline
+        return deadline + (int(diff / period) + 1) * period
+
     def run(self):
         print("Starting virtual sensor " + self.processID)
-
         if self.met == "EVENT":
             self.buildEventAnswerDevice()
         elif self.met == "GET":
@@ -34,130 +44,117 @@ class virtualSensor():
             self.buildFlowAnswerDevice()
         elif self.met == "POST":
             self.buildPostAnswerDevice()
-
         print("Stopping thread " + self.processID)
 
     def buildFlowAnswerDevice(self):
-        # Request: {"method": "FLOW", "sensor": "sensorName", "time":{"collect":collectTime,"publish":publishTime}}
-        t = 0
         try:
-            if not self.sensorsList:
-                raise Exception("No sensors")
+            sensor_dict = {x["name"]: [] for x in self.sensorsList}
+            collect_deadline = time.monotonic() + self.collectTime
+            publish_deadline = time.monotonic() + self.publishTime
 
-            sensor_dict = {}
-            for x in self.sensorsList:
-                sensor_dict[x["name"]] = []
+            while True:
+                now = time.monotonic()
+                wait_s = max(0.0, min(collect_deadline, publish_deadline) - now)
+                if self.stop_event.wait(timeout=wait_s):
+                    break
 
-            while not self.stop_event.is_set():
-                for i in self.sensorsList:
-                    sensorName = i["name"]
-                    method_fn = getattr(sensors, sensorName)
-                    sensor_dict[sensorName].append(method_fn())
+                now = time.monotonic()
 
-                t = t + self.collectTime
+                if now >= collect_deadline:
+                    for i in self.sensorsList:
+                        sn = i["name"]
+                        sensor_dict[sn].append(getattr(sensors, sn)())
+                    collect_deadline = self._advance(collect_deadline, self.collectTime, now)
 
-                if t >= self.publishTime:
+                if now >= publish_deadline:
                     header = {
                         "method": "FLOW",
                         "device": self.deviceName,
                         "sensor": self.sensorName,
                         "time": {"collect": self.collectTime, "publish": self.publishTime},
                     }
-                    array_values = [
-                        {name: list(values)} for name, values in sensor_dict.items()
-                    ]
-                    payload = {"sensors": array_values}
-                    response = json.dumps({"header": header, "payload": payload})
-                    self.pub_client.publish(self.topic, response)
-                    self.pub_client.loop(timeout=1.0)
-                    t = 0
+                    payload = {"sensors": [{n: list(v)} for n, v in sensor_dict.items()]}
+                    self.pub_client.publish(self.topic, json.dumps({"header": header, "payload": payload}))
+                    publish_deadline = self._advance(publish_deadline, self.publishTime, now)
                     for name in sensor_dict:
                         sensor_dict[name] = []
 
-                # wait() returns True if stop was signalled — exits immediately on STOP
-                if self.stop_event.wait(timeout=self.collectTime):
-                    break
-
         except Exception:
             print(traceback.format_exc())
-            error = json.dumps({"code": "ERROR", "number": 1, "message": "Error reading sensor"})
-            self.pub_client.publish(self.topicError, error)
-            self.pub_client.loop(timeout=1.0)
+            self._pub_err("SENSOR_READ_ERROR", "Error reading sensor")
 
     def buildEventAnswerDevice(self):
-        # Request: {"method":"EVENT", "sensor":"sensorName", "time":{"collect":collectTime}}
         try:
             method_fn = getattr(sensors, self.sensorName)
             value = method_fn()
-            retrieved = [value]
             header = {
                 "method": "EVENT",
                 "device": self.deviceName,
                 "sensor": self.sensorName,
                 "time": {"collect": self.collectTime, "publish": self.publishTime},
             }
-            payload = {"sensors": [{self.sensorName: retrieved}]}
-            response = json.dumps({"header": header, "payload": payload})
-            self.pub_client.publish(self.topic, response)
-            self.pub_client.loop(timeout=1.0)
+            # publica valor inicial como referência
+            self.pub_client.publish(self.topic, json.dumps({
+                "header": header,
+                "payload": {"sensors": [{self.sensorName: [value]}]},
+            }))
 
-            # wait() returns True if stop was signalled; loop while it times out
-            while not self.stop_event.wait(timeout=self.collectTime):
-                aux = method_fn()
-                if aux != value:
-                    value = aux
-                    retrieved = [value]
-                    payload = {"sensors": [{self.sensorName: retrieved}]}
-                    response = json.dumps({"header": header, "payload": payload})
-                    self.pub_client.publish(self.topic, response)
-                    self.pub_client.loop(timeout=1.0)
+            if self.publishTime == 0:
+                # modo imediato: publica na mudança
+                while not self.stop_event.wait(timeout=self.collectTime):
+                    aux = method_fn()
+                    if aux != value:
+                        value = aux
+                        self.pub_client.publish(self.topic, json.dumps({
+                            "header": header,
+                            "payload": {"sensors": [{self.sensorName: [value]}]},
+                        }))
+            else:
+                # modo janela: bufferiza mudanças, publica em lote
+                buf = []
+                collect_deadline = time.monotonic() + self.collectTime
+                publish_deadline = time.monotonic() + self.publishTime
+
+                while True:
+                    now = time.monotonic()
+                    wait_s = max(0.0, min(collect_deadline, publish_deadline) - now)
+                    if self.stop_event.wait(timeout=wait_s):
+                        break
+
+                    now = time.monotonic()
+
+                    if now >= collect_deadline:
+                        aux = method_fn()
+                        if aux != value:
+                            value = aux
+                            if len(buf) < 30:
+                                buf.append(value)
+                        collect_deadline = self._advance(collect_deadline, self.collectTime, now)
+
+                    if now >= publish_deadline:
+                        if buf:
+                            self.pub_client.publish(self.topic, json.dumps({
+                                "header": header,
+                                "payload": {"sensors": [{self.sensorName: list(buf)}]},
+                            }))
+                            buf = []
+                        publish_deadline = self._advance(publish_deadline, self.publishTime, now)
 
         except Exception:
             print(traceback.format_exc())
-            error = json.dumps({
-                "code": "ERROR",
-                "number": 1,
-                "message": f"There is no {self.sensorName} sensor in device {self.deviceName}",
-            })
-            self.pub_client.publish(self.topicError, error)
-            self.pub_client.loop(timeout=1.0)
+            self._pub_err("SENSOR_READ_ERROR", f"Error reading {self.sensorName}")
 
     def buildGetAnswerDevice(self):
-        # Request: {"method": "GET", "sensor": "sensorName"}
         try:
-            if not self.sensorsList:
-                raise Exception("No sensors")
-
-            sensor_dict = {}
-            for x in self.sensorsList:
-                sensor_dict[x["name"]] = []
-
-            for i in self.sensorsList:
-                sensorName = i["name"]
-                method_fn = getattr(sensors, sensorName)
-                sensor_dict[sensorName].append(method_fn())
-
-            print("methodGET")
-
+            sensor_dict = {x["name"]: [getattr(sensors, x["name"])()] for x in self.sensorsList}
             header = {"method": "GET", "device": self.deviceName, "sensor": self.sensorName}
-            array_values = [{name: list(values)} for name, values in sensor_dict.items()]
-            payload = {"sensors": array_values}
-            response = json.dumps({"header": header, "payload": payload})
-            self.pub_client.publish(self.topic, response)
-            self.pub_client.loop(timeout=1.0)
-
+            payload = {"sensors": [{n: v} for n, v in sensor_dict.items()]}
+            self.pub_client.publish(self.topic, json.dumps({"header": header, "payload": payload}))
         except Exception:
             print(traceback.format_exc())
-            error = json.dumps({
-                "code": "ERROR",
-                "number": 1,
-                "message": f"There is no {self.sensorName} sensor in device {self.deviceName}",
-            })
-            self.pub_client.publish(self.topicError, error)
-            self.pub_client.loop(timeout=1.0)
+            self._pub_err("SENSOR_READ_ERROR", f"Error reading {self.sensorName}")
 
     def buildPostAnswerDevice(self):
-        # Request: {"method":"POST", "sensor":"sensorName", "value":value}
         try:
             method_fn = getattr(sensors, self.sensorName)
             result = method_fn(self.post_value)
@@ -167,19 +164,10 @@ class virtualSensor():
                 "sensor": self.sensorName,
                 "value": result,
             }
-            payload = {"value": result}
-            response = json.dumps({"header": header, "payload": payload})
-            self.pub_client.publish(self.topic, response)
-            self.pub_client.loop(timeout=1.0)
+            self.pub_client.publish(self.topic, json.dumps({"header": header, "payload": {"value": result}}))
         except Exception:
             print(traceback.format_exc())
-            error = json.dumps({
-                "code": "ERROR",
-                "number": 1,
-                "message": f"There is no {self.sensorName} sensor in device {self.deviceName}",
-            })
-            self.pub_client.publish(self.topicError, error)
-            self.pub_client.loop(timeout=1.0)
+            self._pub_err("SENSOR_READ_ERROR", f"Error in POST for {self.sensorName}")
 
 
 def on_disconnect(mqttc, obj, msg):
@@ -209,15 +197,9 @@ def main(data, msg, stop_event):
         print("Message missing 'method' field, ignoring.")
         return
 
-    found = False
     if sensorName != deviceName:
-        for sen in sensorsList:
-            if sen["name"] == sensorName:
-                sensorsList = [sen]
-                found = True
-                break
-        if not found:
-            sensorsList = []
+        found = [s for s in sensorsList if s["name"] == sensorName]
+        sensorsList = found
 
     print("-------------------------------------------------")
     print("| Topic: " + str(msg.topic))
@@ -230,7 +212,19 @@ def main(data, msg, stop_event):
     pub_client.on_disconnect = on_disconnect
     pub_client.username_pw_set(mqttUsername, mqttPassword)
     pub_client.connect(mqttBroker, mqttPort, 60)
-    pub_client.loop(timeout=1.0)  # aguarda CONNACK antes de publicar
+    pub_client.loop_start()
+
+    def pub_err(code, message=''):
+        payload = {'code': code}
+        if message:
+            payload['message'] = message
+        pub_client.publish(topicError, json.dumps(payload))
+        time.sleep(0.3)
+
+    if not sensorsList:
+        pub_err("SENSOR_NOT_FOUND", sensorName)
+        pub_client.loop_stop()
+        return
 
     if met == "POST":
         post_value = msgJson.get("value")
@@ -242,17 +236,42 @@ def main(data, msg, stop_event):
                                 topic, topicError, pub_client, 0, 0, stop_event)
     elif met == "FLOW":
         time_cfg = msgJson.get("time", {})
-        collect = time_cfg.get("collect", 1)
-        publish = time_cfg.get("publish", collect)
+        try:
+            collect = int(time_cfg.get("collect", 1))
+            publish = int(time_cfg.get("publish", collect))
+        except Exception:
+            pub_err("INVALID_PARAMS", "Invalid time parameters")
+            pub_client.loop_stop()
+            return
+        if collect <= 0 or publish < collect:
+            pub_err("INVALID_PARAMS", f"collect={collect} publish={publish}")
+            pub_client.loop_stop()
+            return
         sensor = virtualSensor(idP, deviceName, sensorName, sensorsList, met,
                                 topic, topicError, pub_client, collect, publish, stop_event)
     elif met == "EVENT":
         time_cfg = msgJson.get("time", {})
-        collect = time_cfg.get("collect", 1)
+        try:
+            collect = int(time_cfg.get("collect", 1))
+            publish = int(time_cfg.get("publish", 0))
+        except Exception:
+            pub_err("INVALID_PARAMS", "Invalid time parameters")
+            pub_client.loop_stop()
+            return
+        if collect <= 0:
+            pub_err("INVALID_PARAMS", "collect must be > 0")
+            pub_client.loop_stop()
+            return
+        if publish > 0 and publish < collect:
+            pub_err("INVALID_PARAMS", "publish must be >= collect")
+            pub_client.loop_stop()
+            return
         sensor = virtualSensor(idP, deviceName, sensorName, sensorsList, met,
-                                topic, topicError, pub_client, collect, 0, stop_event)
+                                topic, topicError, pub_client, collect, publish, stop_event)
     else:
-        print(f"Unknown method: {met}")
+        pub_client.loop_stop()
         return
 
     sensor.run()
+    pub_client.loop_stop()
+    pub_client.disconnect()

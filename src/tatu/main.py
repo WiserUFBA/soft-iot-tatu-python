@@ -24,16 +24,21 @@ def on_connect(mqttc, obj, flags, rc):
 
 
 def on_message(mqttc, obj, msg):
-    if obj["topicReq"] in msg.topic:
-        try:
-            tatu_msg = json.loads(msg.payload)
-        except Exception:
-            print("Invalid JSON payload, ignoring message.")
-            return
-        if tatu_msg.get("method") == "STOP":
-            stop_sensor(obj, tatu_msg)
-        else:
-            init_sensor(obj, tatu_msg, msg)
+    if obj["topicReq"] not in msg.topic:
+        return
+    try:
+        tatu_msg = json.loads(msg.payload)
+    except Exception:
+        print("Invalid JSON payload, ignoring message.")
+        return
+    method = tatu_msg.get("method", "")
+    if method == "STOP":
+        stop_sensor(mqttc, obj, tatu_msg)
+    elif method in ("GET", "FLOW", "EVENT", "POST"):
+        init_sensor(obj, tatu_msg, msg)
+    else:
+        topicError = obj["topicPrefix"] + obj["deviceName"] + obj["topicErr"]
+        mqttc.publish(topicError, json.dumps({"code": "UNKNOWN_METHOD", "message": method}))
 
 
 def on_disconnect(mqttc, obj, rc):
@@ -45,7 +50,8 @@ def on_disconnect(mqttc, obj, rc):
 
 def init_sensor(obj, tatu_msg, msg):
     import tatu
-    thread_id = _make_thread_id(tatu_msg["method"], obj["deviceName"], tatu_msg["sensor"])
+    sensor_name = tatu_msg.get("sensor", obj["deviceName"])
+    thread_id = _make_thread_id(tatu_msg["method"], obj["deviceName"], sensor_name)
     stop_event = threading.Event()
     t = threading.Thread(target=tatu.main, args=(obj, msg, stop_event), name=thread_id, daemon=True)
     with _threads_lock:
@@ -58,9 +64,13 @@ def init_sensor(obj, tatu_msg, msg):
     _cleanup_threads()
 
 
-def stop_sensor(obj, tatu_msg):
+def stop_sensor(mqttc, obj, tatu_msg):
+    topicError = obj["topicPrefix"] + obj["deviceName"] + obj["topicErr"]
     target_method = tatu_msg.get("target", "FLOW")
     sensor_name = tatu_msg.get("sensor", "")
+    if not sensor_name:
+        mqttc.publish(topicError, json.dumps({"code": "INVALID_PARAMS", "message": "STOP requires sensor field"}))
+        return
     thread_id = _make_thread_id(target_method, obj["deviceName"], sensor_name)
     with _threads_lock:
         entry = _threads.pop(thread_id, None)
@@ -69,7 +79,9 @@ def stop_sensor(obj, tatu_msg):
         stop_event.set()
         print(f"Stopping thread {thread_id}")
     else:
+        mqttc.publish(topicError, json.dumps({"code": "STOP_NOT_FOUND", "message": f"{target_method} not found for sensor: {sensor_name}"}))
         print(f"No running thread found for {thread_id}")
+    _cleanup_threads()
 
 
 def _cleanup_threads():
@@ -89,11 +101,7 @@ while True:
     mqttPassword = data["mqttPassword"]
     deviceName = data["deviceName"]
 
-    # For paho-mqtt 2.0+ use CallbackAPIVersion.VERSION1:
     sub_client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION1, deviceName + "_sub", protocol=mqtt.MQTTv31)
-    # For paho-mqtt 1.x use:
-    # sub_client = mqtt.Client(deviceName + "_sub", protocol=mqtt.MQTTv31)
-
     sub_client.username_pw_set(mqttUsername, mqttPassword)
     sub_client.user_data_set(data)
     sub_client.on_connect = on_connect
